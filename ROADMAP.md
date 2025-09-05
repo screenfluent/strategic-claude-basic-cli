@@ -24,10 +24,10 @@ This roadmap outlines the incremental development approach for building the Stra
 - [x] Create user interaction utilities for prompts
 
 ### 1.3 Core Models
-- [ ] Define configuration structures
-- [ ] Create status models
-- [ ] Implement error handling types
-- [ ] Add validation utilities
+- [x] Define configuration structures
+- [x] Create status models
+- [x] Implement error handling types
+- [x] Add validation utilities
 
 **Deliverables**:
 - Working CLI binary with help system
@@ -250,7 +250,7 @@ Each phase must meet these criteria before proceeding:
 ### Future Enhancements (Post v1.0)
 - Configuration file support
 - Selective directory customization (beyond core/guides/templates)
-- Update command for strategic-claude-basic content
+- Update command for strategic-claude-basic-template content
 - Multiple framework support
 - Integration with package managers
 - Web-based status dashboard

@@ -2,7 +2,7 @@
 ## Strategic Claude Basic CLI
 
 ### Overview
-Strategic Claude Basic CLI is a command-line tool that simplifies the integration of the Strategic Claude Basic framework into any project. It automates the process of cloning the strategic-claude-basic repository, copying its contents, and setting up the necessary directory structure and symlinks for Claude Code integration.
+Strategic Claude Basic CLI is a command-line tool that simplifies the integration of the Strategic Claude Basic framework into any project. It automates the process of cloning the strategic-claude-basic-template repository, copying its contents, and setting up the necessary directory structure and symlinks for Claude Code integration.
 
 ### Goals
 - Provide a simple, reliable way to add Strategic Claude Basic to any project
@@ -21,7 +21,7 @@ Strategic Claude Basic CLI is a command-line tool that simplifies the integratio
 **User Story**: As a developer, I want to add Strategic Claude Basic to my project with a single command so I can start using its features immediately.
 
 **Acceptance Criteria**:
-- Clone strategic-claude-basic repository to temporary location
+- Clone strategic-claude-basic-template repository to temporary location
 - Copy `.strategic-claude-basic` directory to target project
 - Create `.claude` directory if it doesn't exist
 - Set up symlinks from `.claude` subdirectories to strategic-claude-basic core
@@ -88,7 +88,7 @@ Strategic Claude Basic CLI is a command-line tool that simplifies the integratio
    Are you sure you want to proceed? (y/N):
    ```
 4. Create backup of existing files (unless `--no-backup`)
-5. Clone strategic-claude-basic repository
+5. Clone strategic-claude-basic-template repository
 6. Copy `.strategic-claude-basic` to target:
    - If `--force-core`: Only replace core/, guides/, templates/ directories
    - If `--force`: Replace entire directory
@@ -177,4 +177,4 @@ Strategic Claude Basic CLI is a command-line tool that simplifies the integratio
 - Complex configuration management beyond basic installation
 - Integration with other Claude frameworks
 - GUI interface
-- Automatic updates of strategic-claude-basic content
+- Automatic updates of strategic-claude-basic-template content
