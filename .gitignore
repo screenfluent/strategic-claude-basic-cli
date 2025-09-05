@@ -17,8 +17,12 @@ coverage.*
 *.coverprofile
 profile.cov
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# Dependency directories
+vendor/
+
+# Build directories
+bin/
+dist/
 
 # Go workspace file
 go.work
@@ -28,5 +32,35 @@ go.work.sum
 .env
 
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+tmp/
+
+# Log files
+*.log
+logs/
+
+# Build artifacts
+strategic-claude-basic-cli
+strategic-claude-basic-cli.exe
+
+# Development environment
+.env.local
+.env.*.local
