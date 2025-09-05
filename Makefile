@@ -50,7 +50,15 @@ deps:
 
 # Install the binary
 install: build
-	cp $(BUILD_DIR)/$(BINARY_NAME) $(GOPATH)/bin/$(BINARY_NAME)
+	@if [ -z "$(GOPATH)" ]; then \
+		echo "Installing to $(HOME)/go/bin/$(BINARY_NAME)"; \
+		mkdir -p $(HOME)/go/bin; \
+		cp $(BUILD_DIR)/$(BINARY_NAME) $(HOME)/go/bin/$(BINARY_NAME); \
+	else \
+		echo "Installing to $(GOPATH)/bin/$(BINARY_NAME)"; \
+		mkdir -p $(GOPATH)/bin; \
+		cp $(BUILD_DIR)/$(BINARY_NAME) $(GOPATH)/bin/$(BINARY_NAME); \
+	fi
 
 # Run the application
 run:
