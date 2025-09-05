@@ -4,6 +4,11 @@
 BINARY_NAME=strategic-claude-basic-cli
 BUILD_DIR=bin
 
+# Version information
+VERSION ?= 0.1.0
+COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "dev")
+DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+
 # Go parameters
 GOCMD=go
 GOBUILD=$(GOCMD) build
@@ -12,9 +17,12 @@ GOTEST=$(GOCMD) test
 GOGET=$(GOCMD) get
 GOMOD=$(GOCMD) mod
 
+# Build flags
+LDFLAGS=-ldflags "-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)"
+
 # Build the application
 build:
-	$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -v ./cmd/$(BINARY_NAME)
+	$(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) -v ./cmd/$(BINARY_NAME)
 
 # Test the application
 test:
@@ -46,7 +54,7 @@ install: build
 
 # Run the application
 run:
-	$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -v ./cmd/$(BINARY_NAME)
+	$(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) -v ./cmd/$(BINARY_NAME)
 	./$(BUILD_DIR)/$(BINARY_NAME)
 
 # Create build directory

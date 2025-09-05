@@ -16,12 +16,12 @@ This roadmap outlines the incremental development approach for building the Stra
 - [x] Configure .gitignore
 
 ### 1.2 CLI Framework
-- [ ] Implement root command with Cobra
-- [ ] Add global flags (--verbose, --target)
-- [ ] Set up version command
-- [ ] Implement basic help system
-- [ ] Add shell completion scaffolding
-- [ ] Create user interaction utilities for prompts
+- [x] Implement root command with Cobra
+- [x] Add global flags (--verbose, --target)
+- [x] Set up version command
+- [x] Implement basic help system
+- [x] Add shell completion scaffolding
+- [x] Create user interaction utilities for prompts
 
 ### 1.3 Core Models
 - [ ] Define configuration structures
