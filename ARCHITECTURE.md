@@ -184,9 +184,12 @@ type SymlinkStatus struct {
 4. **Git Service**: Clone repository to temp location and checkout fixed commit
 5. **File System**: Copy `.strategic-claude-basic` to target:
    - **Full Installation** (`--force` or new): Copy entire directory
-   - **Core Update** (`--force-core`): Selectively replace core/, guides/, templates/
-6. **File System**: Create `.claude` directory structure (if needed)
-7. **Symlink Service**: Create symlinks to strategic-claude-basic core (if needed)
+   - **Core Update** (`--force-core`): Selectively replace core/, guides/, templates/ (preserve archives/, issues/, plan/, research/, summary/)
+6. **File System**: Create `.claude` directory structure (agents/, commands/, hooks/ subdirectories)
+7. **Symlink Service**: Create symlinks:
+   - `.claude/agents/strategic` → `../.strategic-claude-basic/core/agents`
+   - `.claude/commands/strategic` → `../.strategic-claude-basic/core/commands`
+   - `.claude/hooks/strategic` → `../.strategic-claude-basic/core/hooks`
 8. **Git Service**: Cleanup temp directory
 9. **Installer Service**: Validate installation
 

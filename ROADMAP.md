@@ -106,7 +106,7 @@ This roadmap outlines the incremental development approach for building the Stra
 - [ ] Complete init command implementation
 - [ ] Add comprehensive flag support (--force, --force-core, --yes, --no-backup)
 - [ ] Implement confirmation prompt with installation analysis
-- [ ] Implement selective update logic for --force-core flag
+- [ ] Implement selective update logic for --force-core flag (replace core/, guides/, templates/ only)
 - [ ] Implement dry-run functionality
 - [ ] Add progress reporting
 
@@ -230,7 +230,7 @@ Each phase must meet these criteria before proceeding:
 - [ ] All four commands (init, clean, status, completions) working
 - [ ] Installation completes in under 30 seconds
 - [ ] Zero data loss during operations
-- [ ] --force-core preserves user content reliably
+- [ ] --force-core preserves user content reliably (archives/, issues/, plan/, research/, summary/)
 - [ ] Clear error messages for all failure modes
 - [ ] Shell completions work in major shells
 - [ ] Comprehensive test coverage (>80%)
@@ -249,7 +249,7 @@ Each phase must meet these criteria before proceeding:
 
 ### Future Enhancements (Post v1.0)
 - Configuration file support
-- Selective directory customization (beyond core/guides/templates)
+- Selective directory customization (beyond core/guides/templates framework directories)
 - Update command for strategic-claude-basic-template content
 - Multiple framework support
 - Integration with package managers

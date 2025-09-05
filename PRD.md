@@ -24,7 +24,7 @@ Strategic Claude Basic CLI is a command-line tool that simplifies the integratio
 - Clone strategic-claude-basic-template repository to temporary location
 - Copy `.strategic-claude-basic` directory to target project
 - Create `.claude` directory if it doesn't exist
-- Set up symlinks from `.claude` subdirectories to strategic-claude-basic core
+- Set up symlinks from `.claude` subdirectories (agents/, commands/, hooks/) to strategic-claude-basic core components
 - Clean up temporary files
 - Provide clear feedback on success/failure
 
@@ -71,7 +71,7 @@ Strategic Claude Basic CLI is a command-line tool that simplifies the integratio
 **Flags**:
 - `--target, -t`: Target directory (default: current directory)
 - `--force, -f`: Overwrite existing installation completely
-- `--force-core`: Update only core directories (core, guides, templates) while preserving user content
+- `--force-core`: Update only framework directories (core, guides, templates) while preserving user content (archives, issues, plan, research, summary)
 - `--yes, -y`: Skip confirmation prompt (auto-confirm installation)
 - `--no-backup`: Skip backup creation
 - `--verbose, -v`: Verbose output
@@ -90,11 +90,14 @@ Strategic Claude Basic CLI is a command-line tool that simplifies the integratio
 4. Create backup of existing files (unless `--no-backup`)
 5. Clone strategic-claude-basic-template repository
 6. Copy `.strategic-claude-basic` to target:
-   - If `--force-core`: Only replace core/, guides/, templates/ directories
+   - If `--force-core`: Only replace core/, guides/, templates/ directories (preserve archives/, issues/, plan/, research/, summary/)
    - If `--force`: Replace entire directory
    - Otherwise: Full installation (fail if exists)
-7. Create `.claude` directory structure (if needed)
-8. Set up symlinks (if needed)
+7. Create `.claude` directory structure (agents/, commands/, hooks/ subdirectories)
+8. Set up symlinks:
+   - `.claude/agents/strategic` → `../.strategic-claude-basic/core/agents`
+   - `.claude/commands/strategic` → `../.strategic-claude-basic/core/commands`
+   - `.claude/hooks/strategic` → `../.strategic-claude-basic/core/hooks`
 9. Validate installation
 10. Clean up temporary files
 

@@ -24,15 +24,27 @@ const (
 	TemplatesDir = "templates"
 	ConfigDir    = "config"
 
+	// User directories that are preserved during updates
+	ArchivesDir = "archives"
+	IssuesDir   = "issues"
+	PlanDir     = "plan"
+	ResearchDir = "research"
+	SummaryDir  = "summary"
+
+	// Core subdirectories
+	AgentsDir   = "agents"
+	CommandsDir = "commands"
+	HooksDir    = "hooks"
+
 	// Symlink targets within .claude/
 	ClaudeCommandsDir = "commands"
 	ClaudeConfigFile  = "CLAUDE.md"
 
-	// Core framework files that are always updated with --force-core
-	CoreFiles = "core/"
+	// Directories that are replaced during updates
+	ReplacedDirs = "core/,guides/,templates/"
 
-	// Files to preserve during selective updates
-	UserPreservedDirs = "guides/,templates/"
+	// User directories preserved during updates
+	UserPreservedDirs = "archives/,issues/,plan/,research/,summary/"
 
 	// Default timeout values
 	DefaultGitTimeout     = 30 * time.Second
@@ -78,29 +90,32 @@ func GetFrameworkDirectories() []string {
 	}
 }
 
-// GetCoreDirectories returns directories that are considered "core" and updated with --force-core
+// GetCoreDirectories returns directories that are replaced during updates
 func GetCoreDirectories() []string {
 	return []string{
 		CoreDir,
-		ConfigDir,
+		GuidesDir,
+		TemplatesDir,
 	}
 }
 
 // GetUserPreservedDirectories returns directories that should be preserved during selective updates
 func GetUserPreservedDirectories() []string {
 	return []string{
-		GuidesDir,
-		TemplatesDir,
+		ArchivesDir,
+		IssuesDir,
+		PlanDir,
+		ResearchDir,
+		SummaryDir,
 	}
 }
 
 // GetRequiredSymlinks returns the symlinks that should be created
 func GetRequiredSymlinks() map[string]string {
 	return map[string]string{
-		"core":      "../" + StrategicClaudeBasicDir + "/" + CoreDir,
-		"guides":    "../" + StrategicClaudeBasicDir + "/" + GuidesDir,
-		"templates": "../" + StrategicClaudeBasicDir + "/" + TemplatesDir,
-		"config":    "../" + StrategicClaudeBasicDir + "/" + ConfigDir,
+		"agents/strategic":   "../../" + StrategicClaudeBasicDir + "/core/agents",
+		"commands/strategic": "../../" + StrategicClaudeBasicDir + "/core/commands",
+		"hooks/strategic":    "../../" + StrategicClaudeBasicDir + "/core/hooks",
 	}
 }
 
@@ -119,7 +134,7 @@ func IsUserPreservedPath(path string) bool {
 	return false
 }
 
-// IsCoreFile checks if a file is considered part of the core framework
+// IsCoreFile checks if a file is part of directories that get replaced during updates
 func IsCoreFile(path string) bool {
 	for _, coreDir := range GetCoreDirectories() {
 		if path == coreDir || strings.HasPrefix(path, coreDir+"/") {
