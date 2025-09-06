@@ -67,27 +67,30 @@ func (s *Service) CreateDirectory(path string) error {
 	return nil
 }
 
-// RemoveDirectory removes a directory with safety checks
-func (s *Service) RemoveDirectory(path string) error {
-	if path == "" {
+// RemoveStrategicClaudeBasic removes only the .strategic-claude-basic directory
+func (s *Service) RemoveStrategicClaudeBasic(targetDir string) error {
+	if targetDir == "" {
 		return models.NewAppError(
 			models.ErrorCodeValidationFailed,
-			"Directory path cannot be empty",
+			"Target directory cannot be empty",
 			nil,
 		)
 	}
 
-	// Resolve to absolute path
-	absPath, err := filepath.Abs(path)
+	// Build the exact path to .strategic-claude-basic
+	strategicDir := filepath.Join(targetDir, config.StrategicClaudeBasicDir)
+
+	// Resolve to absolute path for validation
+	absPath, err := filepath.Abs(strategicDir)
 	if err != nil {
-		return models.NewFileSystemError(models.ErrorCodeInvalidPath, path, err)
+		return models.NewFileSystemError(models.ErrorCodeInvalidPath, strategicDir, err)
 	}
 
-	// Safety check - don't remove system directories
-	if s.isSystemPath(absPath) {
+	// Validate that we're removing what we expect
+	if !strings.HasSuffix(absPath, config.StrategicClaudeBasicDir) {
 		return models.NewAppError(
 			models.ErrorCodeValidationFailed,
-			fmt.Sprintf("Refusing to remove system directory: %s", absPath),
+			fmt.Sprintf("Path does not end with expected directory name: %s", absPath),
 			nil,
 		)
 	}
@@ -97,7 +100,100 @@ func (s *Service) RemoveDirectory(path string) error {
 		return nil // Already doesn't exist
 	}
 
-	// Remove directory
+	// Remove the strategic-claude-basic directory
+	err = os.RemoveAll(absPath)
+	if err != nil {
+		if os.IsPermission(err) {
+			return models.NewFileSystemError(models.ErrorCodePermissionDenied, absPath, err)
+		}
+		return models.NewFileSystemError(models.ErrorCodeFileSystemError, absPath, err)
+	}
+
+	return nil
+}
+
+// RemoveSymlinks removes only the known Strategic Claude Basic symlinks
+func (s *Service) RemoveSymlinks(targetDir string) error {
+	if targetDir == "" {
+		return models.NewAppError(
+			models.ErrorCodeValidationFailed,
+			"Target directory cannot be empty",
+			nil,
+		)
+	}
+
+	claudeDir := filepath.Join(targetDir, config.ClaudeDir)
+	requiredSymlinks := config.GetRequiredSymlinks()
+
+	for symlinkPath := range requiredSymlinks {
+		fullSymlinkPath := filepath.Join(claudeDir, symlinkPath)
+
+		// Check if symlink exists
+		if _, err := os.Lstat(fullSymlinkPath); os.IsNotExist(err) {
+			continue // Skip if doesn't exist
+		}
+
+		// Remove the symlink
+		err := os.Remove(fullSymlinkPath)
+		if err != nil {
+			if os.IsPermission(err) {
+				return models.NewFileSystemError(models.ErrorCodePermissionDenied, fullSymlinkPath, err)
+			}
+			return models.NewFileSystemError(models.ErrorCodeFileSystemError, fullSymlinkPath, err)
+		}
+	}
+
+	return nil
+}
+
+// RemoveBackup removes a specific backup directory with validation
+func (s *Service) RemoveBackup(targetDir, backupName string) error {
+	if targetDir == "" || backupName == "" {
+		return models.NewAppError(
+			models.ErrorCodeValidationFailed,
+			"Target directory and backup name cannot be empty",
+			nil,
+		)
+	}
+
+	// Validate backup name follows expected pattern
+	if !strings.HasPrefix(backupName, config.BackupDirPrefix) {
+		return models.NewAppError(
+			models.ErrorCodeValidationFailed,
+			fmt.Sprintf("Backup name must start with %s, got: %s", config.BackupDirPrefix, backupName),
+			nil,
+		)
+	}
+
+	// Build path to backup directory
+	backupPath := filepath.Join(targetDir, backupName)
+
+	// Resolve to absolute path for validation
+	absPath, err := filepath.Abs(backupPath)
+	if err != nil {
+		return models.NewFileSystemError(models.ErrorCodeInvalidPath, backupPath, err)
+	}
+
+	// Additional safety check - ensure we're in the expected target directory
+	expectedParent, err := filepath.Abs(targetDir)
+	if err != nil {
+		return models.NewFileSystemError(models.ErrorCodeInvalidPath, targetDir, err)
+	}
+
+	if filepath.Dir(absPath) != expectedParent {
+		return models.NewAppError(
+			models.ErrorCodeValidationFailed,
+			fmt.Sprintf("Backup path is not in expected parent directory: %s", absPath),
+			nil,
+		)
+	}
+
+	// Check if directory exists
+	if _, err := os.Stat(absPath); os.IsNotExist(err) {
+		return nil // Already doesn't exist
+	}
+
+	// Remove the backup directory
 	err = os.RemoveAll(absPath)
 	if err != nil {
 		if os.IsPermission(err) {
@@ -360,10 +456,33 @@ func (s *Service) CopyFrameworkFiles(sourceDir, destDir string) error {
 			continue // Skip if source doesn't have this directory
 		}
 
-		// Remove existing directory if it exists
+		// Remove existing framework directory if it exists
 		if _, err := os.Stat(destPath); err == nil {
-			if err := s.RemoveDirectory(destPath); err != nil {
-				return err
+			// Only remove if it's one of the expected framework directories
+			expectedFrameworkDir := filepath.Base(destPath)
+			isFrameworkDir := false
+			for _, fDir := range frameworkDirs {
+				if expectedFrameworkDir == fDir {
+					isFrameworkDir = true
+					break
+				}
+			}
+
+			if !isFrameworkDir {
+				return models.NewAppError(
+					models.ErrorCodeValidationFailed,
+					fmt.Sprintf("Refusing to remove unexpected directory: %s", destPath),
+					nil,
+				)
+			}
+
+			// Safe to remove framework directory
+			err = os.RemoveAll(destPath)
+			if err != nil {
+				if os.IsPermission(err) {
+					return models.NewFileSystemError(models.ErrorCodePermissionDenied, destPath, err)
+				}
+				return models.NewFileSystemError(models.ErrorCodeFileSystemError, destPath, err)
 			}
 		}
 
@@ -455,36 +574,6 @@ func (s *Service) CheckWritePermission(path string) error {
 }
 
 // Helper functions
-
-// isSystemPath checks if a path is a system directory that should not be removed
-func (s *Service) isSystemPath(path string) bool {
-	systemPaths := []string{
-		"/",
-		"/bin",
-		"/boot",
-		"/dev",
-		"/etc",
-		"/home",
-		"/lib",
-		"/lib64",
-		"/proc",
-		"/root",
-		"/sbin",
-		"/sys",
-		"/tmp",
-		"/usr",
-		"/var",
-	}
-
-	cleanPath := filepath.Clean(path)
-	for _, sysPath := range systemPaths {
-		if cleanPath == sysPath {
-			return true
-		}
-	}
-
-	return false
-}
 
 // GetBackupPath generates a backup path with timestamp
 func (s *Service) GetBackupPath(targetDir string) string {

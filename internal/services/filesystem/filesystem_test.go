@@ -92,7 +92,7 @@ func TestService_CreateDirectory_ExistingFile(t *testing.T) {
 	}
 }
 
-func TestService_RemoveDirectory(t *testing.T) {
+func TestService_RemoveStrategicClaudeBasic(t *testing.T) {
 	service := New()
 	tempDir := t.TempDir()
 
@@ -103,7 +103,7 @@ func TestService_RemoveDirectory(t *testing.T) {
 		errCode   models.ErrorCode
 	}{
 		{
-			name: "empty path",
+			name: "empty target directory",
 			setup: func() string {
 				return ""
 			},
@@ -111,36 +111,30 @@ func TestService_RemoveDirectory(t *testing.T) {
 			errCode:   models.ErrorCodeValidationFailed,
 		},
 		{
-			name: "nonexistent directory",
+			name: "nonexistent strategic directory",
 			setup: func() string {
-				return filepath.Join(tempDir, "nonexistent")
+				return tempDir // No .strategic-claude-basic exists
 			},
 			shouldErr: false, // Should succeed (already doesn't exist)
 		},
 		{
-			name: "valid directory",
+			name: "existing strategic directory",
 			setup: func() string {
-				testDir := filepath.Join(tempDir, "test-remove")
-				_ = os.MkdirAll(testDir, 0755)
-				return testDir
+				strategicDir := filepath.Join(tempDir, config.StrategicClaudeBasicDir)
+				_ = os.MkdirAll(strategicDir, 0755)
+				// Add some content
+				_ = os.WriteFile(filepath.Join(strategicDir, "test.txt"), []byte("test"), 0644)
+				return tempDir
 			},
 			shouldErr: false,
-		},
-		{
-			name: "system path",
-			setup: func() string {
-				return "/bin" // System directory
-			},
-			shouldErr: true,
-			errCode:   models.ErrorCodeValidationFailed,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			testPath := tt.setup()
+			targetDir := tt.setup()
 
-			err := service.RemoveDirectory(testPath)
+			err := service.RemoveStrategicClaudeBasic(targetDir)
 
 			switch {
 			case tt.shouldErr:
@@ -152,10 +146,123 @@ func TestService_RemoveDirectory(t *testing.T) {
 				}
 			case err != nil:
 				t.Errorf("Expected no error, got %v", err)
-			case testPath != "" && !strings.HasPrefix(testPath, "/"):
-				// Verify directory was removed (skip system paths)
-				if _, err := os.Stat(testPath); !os.IsNotExist(err) {
-					t.Error("Directory was not removed")
+			case targetDir != "":
+				// Verify strategic directory was removed
+				strategicDir := filepath.Join(targetDir, config.StrategicClaudeBasicDir)
+				if _, err := os.Stat(strategicDir); !os.IsNotExist(err) {
+					t.Error("Strategic Claude Basic directory was not removed")
+				}
+			}
+		})
+	}
+}
+
+func TestService_RemoveSymlinks(t *testing.T) {
+	service := New()
+	tempDir := t.TempDir()
+
+	// Create .claude directory structure
+	claudeDir := filepath.Join(tempDir, config.ClaudeDir)
+	_ = os.MkdirAll(claudeDir, 0755)
+
+	// Create the symlink directories
+	_ = os.MkdirAll(filepath.Join(claudeDir, "agents"), 0755)
+	_ = os.MkdirAll(filepath.Join(claudeDir, "commands"), 0755)
+	_ = os.MkdirAll(filepath.Join(claudeDir, "hooks"), 0755)
+
+	// Create some test symlinks
+	requiredSymlinks := config.GetRequiredSymlinks()
+	for symlinkPath := range requiredSymlinks {
+		fullPath := filepath.Join(claudeDir, symlinkPath)
+		// Create a dummy target and symlink to it
+		dummyTarget := filepath.Join(tempDir, "dummy")
+		_ = os.MkdirAll(dummyTarget, 0755)
+		_ = os.Symlink(dummyTarget, fullPath)
+	}
+
+	// Test removal
+	err := service.RemoveSymlinks(tempDir)
+	if err != nil {
+		t.Fatalf("RemoveSymlinks failed: %v", err)
+	}
+
+	// Verify symlinks were removed
+	for symlinkPath := range requiredSymlinks {
+		fullPath := filepath.Join(claudeDir, symlinkPath)
+		if _, err := os.Lstat(fullPath); !os.IsNotExist(err) {
+			t.Errorf("Symlink %s was not removed", symlinkPath)
+		}
+	}
+}
+
+func TestService_RemoveBackup(t *testing.T) {
+	service := New()
+	tempDir := t.TempDir()
+
+	tests := []struct {
+		name      string
+		setup     func() (targetDir, backupName string)
+		shouldErr bool
+		errCode   models.ErrorCode
+	}{
+		{
+			name: "empty parameters",
+			setup: func() (string, string) {
+				return "", ""
+			},
+			shouldErr: true,
+			errCode:   models.ErrorCodeValidationFailed,
+		},
+		{
+			name: "invalid backup name",
+			setup: func() (string, string) {
+				return tempDir, "invalid-backup-name"
+			},
+			shouldErr: true,
+			errCode:   models.ErrorCodeValidationFailed,
+		},
+		{
+			name: "valid backup removal",
+			setup: func() (string, string) {
+				backupName := config.BackupDirPrefix + "20240101-120000"
+				backupPath := filepath.Join(tempDir, backupName)
+				_ = os.MkdirAll(backupPath, 0755)
+				_ = os.WriteFile(filepath.Join(backupPath, "test.txt"), []byte("backup content"), 0644)
+				return tempDir, backupName
+			},
+			shouldErr: false,
+		},
+		{
+			name: "nonexistent backup",
+			setup: func() (string, string) {
+				backupName := config.BackupDirPrefix + "20240101-120000"
+				return tempDir, backupName // Doesn't exist
+			},
+			shouldErr: false, // Should succeed (already doesn't exist)
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			targetDir, backupName := tt.setup()
+
+			err := service.RemoveBackup(targetDir, backupName)
+
+			switch {
+			case tt.shouldErr:
+				if err == nil {
+					t.Error("Expected error, got nil")
+				}
+				if tt.errCode != "" && !models.IsErrorCode(err, tt.errCode) {
+					t.Errorf("Expected error code %s, got %v", tt.errCode, err)
+				}
+			case err != nil:
+				t.Errorf("Expected no error, got %v", err)
+			case targetDir != "" && backupName != "":
+				// Verify backup was removed
+				backupPath := filepath.Join(targetDir, backupName)
+				if _, err := os.Stat(backupPath); !os.IsNotExist(err) {
+					t.Error("Backup directory was not removed")
 				}
 			}
 		})
