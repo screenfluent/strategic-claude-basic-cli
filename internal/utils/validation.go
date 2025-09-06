@@ -164,8 +164,18 @@ func NewFileSystemValidator() *FileSystemValidator {
 
 // ValidateSymlink validates that a symlink exists and points to the correct target
 func (f *FileSystemValidator) ValidateSymlink(symlinkPath, expectedTarget string) (*models.SymlinkStatus, error) {
+	// Extract a more descriptive name that includes parent directory for Claude symlinks
+	// For paths like "/path/to/.claude/agents/strategic", extract "agents/strategic"
+	name := filepath.Base(symlinkPath)
+	if strings.Contains(symlinkPath, ".claude") {
+		parent := filepath.Base(filepath.Dir(symlinkPath))
+		if parent != "." && parent != "/" && parent != filepath.Base(symlinkPath) {
+			name = parent + "/" + name
+		}
+	}
+
 	status := &models.SymlinkStatus{
-		Name:   filepath.Base(symlinkPath),
+		Name:   name,
 		Path:   symlinkPath,
 		Valid:  false,
 		Target: "",
