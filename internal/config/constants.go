@@ -8,7 +8,7 @@ import (
 const (
 	// Repository configuration
 	DefaultRepoURL = "https://github.com/Fomo-Driven-Development/strategic-claude-basic-template.git"
-	FixedCommit    = "08dad3425f5d5cddc9fed6e8d96a2778a5a1878b" // Pinned commit hash, updated with releases
+	FixedCommit    = "5fc5e9e83348a543c4d0c91f19f717337318f269" // Pinned commit hash, updated with releases
 	Branch         = "main"
 
 	// Directory configuration
@@ -40,6 +40,11 @@ const (
 	// Symlink targets within .claude/
 	ClaudeCommandsDir = "commands"
 	ClaudeConfigFile  = "CLAUDE.md"
+
+	// Settings files
+	SettingsTemplateFile = "templates/hooks/settings.template.json"
+	ClaudeSettingsFile   = "settings.json"
+	SettingsBackupPrefix = "settings-backup-"
 
 	// Directories that are replaced during updates
 	ReplacedDirs = "core/,guides/,templates/"

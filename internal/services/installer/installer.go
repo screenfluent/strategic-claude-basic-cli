@@ -9,6 +9,7 @@ import (
 	"strategic-claude-basic-cli/internal/models"
 	"strategic-claude-basic-cli/internal/services/filesystem"
 	"strategic-claude-basic-cli/internal/services/git"
+	"strategic-claude-basic-cli/internal/services/settings"
 	"strategic-claude-basic-cli/internal/services/status"
 	"strategic-claude-basic-cli/internal/services/symlink"
 )
@@ -19,6 +20,7 @@ type Service struct {
 	filesystemService *filesystem.Service
 	statusService     *status.Service
 	symlinkService    *symlink.Service
+	settingsService   *settings.Service
 }
 
 // New creates a new installer service instance
@@ -28,6 +30,7 @@ func New() *Service {
 		filesystemService: filesystem.New(),
 		statusService:     status.NewService(),
 		symlinkService:    symlink.New(),
+		settingsService:   settings.New(),
 	}
 }
 
@@ -144,6 +147,11 @@ func (s *Service) Install(installConfig models.InstallConfig) error {
 		return fmt.Errorf("failed to create symlinks: %w", err)
 	}
 
+	// Process settings.json (merge template with existing user settings)
+	if err := s.settingsService.ProcessSettings(plan.TargetDir); err != nil {
+		return fmt.Errorf("failed to process settings: %w", err)
+	}
+
 	// Validate installation
 	if err := s.ValidateInstallation(plan.TargetDir); err != nil {
 		return fmt.Errorf("installation validation failed: %w", err)
@@ -170,6 +178,11 @@ func (s *Service) InstallCore(sourceDir, targetDir string) error {
 	// Ensure user directories exist (but don't overwrite them)
 	if err := s.filesystemService.PreserveUserContent(targetDir); err != nil {
 		return fmt.Errorf("failed to preserve user content: %w", err)
+	}
+
+	// Process settings.json (merge updated template with existing user settings)
+	if err := s.settingsService.ProcessSettings(targetDir); err != nil {
+		return fmt.Errorf("failed to process settings during core update: %w", err)
 	}
 
 	return nil

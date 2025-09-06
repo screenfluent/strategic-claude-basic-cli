@@ -8,6 +8,7 @@ import (
 	"strategic-claude-basic-cli/internal/config"
 	"strategic-claude-basic-cli/internal/models"
 	"strategic-claude-basic-cli/internal/services/filesystem"
+	"strategic-claude-basic-cli/internal/services/settings"
 	"strategic-claude-basic-cli/internal/services/status"
 	"strategic-claude-basic-cli/internal/services/symlink"
 )
@@ -17,6 +18,7 @@ type Service struct {
 	filesystemService *filesystem.Service
 	symlinkService    *symlink.Service
 	statusService     *status.Service
+	settingsService   *settings.Service
 }
 
 // New creates a new cleaner service instance
@@ -25,6 +27,7 @@ func New() *Service {
 		filesystemService: filesystem.New(),
 		symlinkService:    symlink.New(),
 		statusService:     status.NewService(),
+		settingsService:   settings.New(),
 	}
 }
 
@@ -33,6 +36,7 @@ type CleanupResult struct {
 	// What was removed
 	RemovedDirectory bool     `json:"removed_directory"`
 	RemovedSymlinks  []string `json:"removed_symlinks"`
+	CleanedSettings  bool     `json:"cleaned_settings"`
 
 	// What was preserved
 	PreservedFiles []string `json:"preserved_files"`
@@ -93,13 +97,21 @@ func (s *Service) RemoveInstallation(targetDir string) (*CleanupResult, error) {
 		return result, err
 	}
 
-	// Step 3: Clean up empty directories (but preserve user content)
+	// Step 3: Clean settings.json (only if we removed other components)
+	if len(result.RemovedSymlinks) > 0 || result.RemovedDirectory {
+		if err := s.cleanSettings(targetDir, result); err != nil {
+			result.Warnings = append(result.Warnings, fmt.Sprintf("Warning during settings cleanup: %v", err))
+			// Non-fatal error, continue
+		}
+	}
+
+	// Step 4: Clean up empty directories (but preserve user content)
 	if err := s.cleanupEmptyDirectories(targetDir, result); err != nil {
 		result.Warnings = append(result.Warnings, fmt.Sprintf("Warning during directory cleanup: %v", err))
 		// Non-fatal error, continue
 	}
 
-	// Step 4: Validate cleanup
+	// Step 5: Validate cleanup
 	if err := s.validateCleanup(targetDir, result); err != nil {
 		result.Warnings = append(result.Warnings, fmt.Sprintf("Cleanup validation warning: %v", err))
 	}
@@ -252,6 +264,34 @@ func (s *Service) validateCleanup(targetDir string, result *CleanupResult) error
 		if symlink.Valid && symlink.Exists {
 			result.Warnings = append(result.Warnings, fmt.Sprintf("Strategic Claude symlink still exists: %s", symlink.Path))
 		}
+	}
+
+	return nil
+}
+
+// cleanSettings removes strategic hooks from settings.json while preserving user customizations
+func (s *Service) cleanSettings(targetDir string, result *CleanupResult) error {
+	settingsPath := filepath.Join(targetDir, config.ClaudeDir, config.ClaudeSettingsFile)
+
+	// Check if settings file exists
+	if _, err := os.Stat(settingsPath); os.IsNotExist(err) {
+		return nil // Nothing to clean
+	}
+
+	// Clean the settings
+	if err := s.settingsService.CleanSettings(targetDir); err != nil {
+		return err
+	}
+
+	result.CleanedSettings = true
+
+	// Check if settings file was removed entirely
+	if _, err := os.Stat(settingsPath); os.IsNotExist(err) {
+		result.PreservedFiles = append(result.PreservedFiles,
+			"settings.json removed (was empty after cleanup)")
+	} else {
+		result.PreservedFiles = append(result.PreservedFiles,
+			"settings.json (cleaned of strategic hooks)")
 	}
 
 	return nil
