@@ -13,8 +13,14 @@ const (
 	ErrorCodeGitCloneFailed    ErrorCode = "GIT_CLONE_FAILED"
 	ErrorCodeGitCheckoutFailed ErrorCode = "GIT_CHECKOUT_FAILED"
 	ErrorCodeGitNotInstalled   ErrorCode = "GIT_NOT_INSTALLED"
+	ErrorCodeGitNotFound       ErrorCode = "GIT_NOT_FOUND"
+	ErrorCodeGitCloneError     ErrorCode = "GIT_CLONE_ERROR"
+	ErrorCodeGitCheckoutError  ErrorCode = "GIT_CHECKOUT_ERROR"
+	ErrorCodeGitError          ErrorCode = "GIT_ERROR"
+	ErrorCodeGitCommitNotFound ErrorCode = "GIT_COMMIT_NOT_FOUND"
 
 	// File system errors
+	ErrorCodeFileSystemError       ErrorCode = "FILE_SYSTEM_ERROR"
 	ErrorCodeDirectoryNotFound     ErrorCode = "DIRECTORY_NOT_FOUND"
 	ErrorCodeDirectoryNotEmpty     ErrorCode = "DIRECTORY_NOT_EMPTY"
 	ErrorCodePermissionDenied      ErrorCode = "PERMISSION_DENIED"
@@ -132,7 +138,9 @@ func IsGitError(err error) bool {
 	var appErr *AppError
 	if errors.As(err, &appErr) {
 		switch appErr.Code {
-		case ErrorCodeGitCloneFailed, ErrorCodeGitCheckoutFailed, ErrorCodeGitNotInstalled:
+		case ErrorCodeGitCloneFailed, ErrorCodeGitCheckoutFailed, ErrorCodeGitNotInstalled,
+			ErrorCodeGitNotFound, ErrorCodeGitCloneError, ErrorCodeGitCheckoutError,
+			ErrorCodeGitError, ErrorCodeGitCommitNotFound:
 			return true
 		}
 	}
@@ -160,10 +168,16 @@ func GetUserFriendlyMessage(err error) string {
 	}
 
 	switch appErr.Code {
-	case ErrorCodeGitNotInstalled:
+	case ErrorCodeGitNotInstalled, ErrorCodeGitNotFound:
 		return "Git is not installed or not available in PATH. Please install Git and try again."
-	case ErrorCodeGitCloneFailed:
+	case ErrorCodeGitCloneFailed, ErrorCodeGitCloneError:
 		return "Failed to download the Strategic Claude Basic repository. Please check your internet connection."
+	case ErrorCodeGitCheckoutFailed, ErrorCodeGitCheckoutError:
+		return "Failed to checkout the specified commit. The repository may be corrupted or the commit may not exist."
+	case ErrorCodeGitCommitNotFound:
+		return "The specified commit was not found in the repository."
+	case ErrorCodeGitError:
+		return "A git operation failed. Please ensure the repository is valid and try again."
 	case ErrorCodePermissionDenied:
 		return "Permission denied. Please check that you have write permissions to the target directory."
 	case ErrorCodeAlreadyInstalled:

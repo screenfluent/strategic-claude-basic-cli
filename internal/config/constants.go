@@ -8,7 +8,7 @@ import (
 const (
 	// Repository configuration
 	DefaultRepoURL = "https://github.com/Fomo-Driven-Development/strategic-claude-basic-template.git"
-	FixedCommit    = "db7a4c0" // Pinned commit hash, updated with releases
+	FixedCommit    = "3e43b7a933d5c347483e3112505149f6e9dcd210" // Pinned commit hash, updated with releases
 	Branch         = "main"
 
 	// Directory configuration
