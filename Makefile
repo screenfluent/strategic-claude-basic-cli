@@ -1,4 +1,4 @@
-.PHONY: build test clean install run lint help
+.PHONY: build test clean install run lint fmt fmt-check lint-strict pre-commit-check help
 
 # Binary name
 BINARY_NAME=strategic-claude-basic-cli
@@ -33,9 +33,65 @@ test-coverage:
 	$(GOTEST) -v -coverprofile=coverage.out ./...
 	$(GOCMD) tool cover -html=coverage.out
 
-# Run linter
+# Format code (matches pre-commit formatting)
+fmt:
+	@echo "Formatting Go code with goimports..."
+	goimports -w .
+	@echo "Tidying Go modules..."
+	$(GOMOD) tidy
+	@echo "Fixing trailing whitespace..."
+	@find . -name "*.go" -exec sed -i 's/[[:space:]]*$$//' {} \;
+
+# Check formatting without making changes
+fmt-check:
+	@echo "Checking Go formatting..."
+	@if [ -n "$$(goimports -l .)" ]; then \
+		echo "The following files need formatting:"; \
+		goimports -l .; \
+		echo "Run 'make fmt' to fix formatting issues."; \
+		exit 1; \
+	fi
+	@echo "Checking Go modules..."
+	@if ! $(GOMOD) tidy -diff; then \
+		echo "Go modules need tidying. Run 'make fmt' to fix."; \
+		exit 1; \
+	fi
+
+# Run linter (original target)
 lint:
 	golangci-lint run
+
+# Run comprehensive linting (matches pre-commit strictness)
+lint-strict:
+	@echo "Running comprehensive linting checks..."
+	@echo "1. Checking Go formatting and imports..."
+	@$(MAKE) fmt-check
+	@echo "2. Running golangci-lint..."
+	golangci-lint run
+	@echo "3. Checking for merge conflicts..."
+	@if find . -name "*.go" -exec grep -l "<<<<<<< HEAD\|=======" {} \; | head -1 | grep -q .; then \
+		echo "Merge conflict markers found in Go files!"; \
+		exit 1; \
+	fi
+	@echo "All linting checks passed!"
+
+# Run all pre-commit checks locally
+pre-commit-check:
+	@echo "Running all pre-commit validation checks..."
+	@echo "1. Formatting checks..."
+	@$(MAKE) fmt-check
+	@echo "2. Building project..."
+	@$(MAKE) build
+	@echo "3. Running tests..."
+	@$(MAKE) test
+	@echo "4. Running golangci-lint..."
+	golangci-lint run --timeout=5m
+	@echo "5. Additional validation checks..."
+	@if find . -name "*.go" -exec grep -l "<<<<<<< HEAD\|=======" {} \; | head -1 | grep -q .; then \
+		echo "Merge conflict markers found in Go files!"; \
+		exit 1; \
+	fi
+	@echo "All pre-commit checks passed! ✅"
 
 # Clean build artifacts
 clean:
@@ -75,12 +131,23 @@ build: $(BUILD_DIR) deps
 # Show help
 help:
 	@echo "Available targets:"
-	@echo "  build        - Build the application"
-	@echo "  test         - Run tests"
+	@echo ""
+	@echo "Building & Running:"
+	@echo "  build         - Build the application"
+	@echo "  run           - Build and run the application"
+	@echo "  install       - Install the binary to GOPATH/bin"
+	@echo "  clean         - Clean build artifacts"
+	@echo "  deps          - Download and tidy dependencies"
+	@echo ""
+	@echo "Code Quality:"
+	@echo "  fmt           - Format code (goimports + mod tidy + whitespace)"
+	@echo "  fmt-check     - Check formatting without making changes"
+	@echo "  lint          - Run golangci-lint (basic)"
+	@echo "  lint-strict   - Run comprehensive linting (matches pre-commit)"
+	@echo "  pre-commit-check - Run all pre-commit validations locally"
+	@echo ""
+	@echo "Testing:"
+	@echo "  test          - Run tests"
 	@echo "  test-coverage - Run tests with coverage report"
-	@echo "  lint         - Run golangci-lint"
-	@echo "  clean        - Clean build artifacts"
-	@echo "  deps         - Download and tidy dependencies"
-	@echo "  install      - Install the binary to GOPATH/bin"
-	@echo "  run          - Build and run the application"
-	@echo "  help         - Show this help message"
+	@echo ""
+	@echo "  help          - Show this help message"
