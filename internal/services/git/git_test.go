@@ -226,8 +226,12 @@ func TestService_GetRepoInfo(t *testing.T) {
 	}
 
 	// Configure git user for testing
-	_ = exec.Command("git", "config", "user.email", "test@example.com").Run()
-	_ = exec.Command("git", "config", "user.name", "Test User").Run()
+	cmd = exec.Command("git", "config", "user.email", "test@example.com")
+	cmd.Dir = tempDir
+	_ = cmd.Run()
+	cmd = exec.Command("git", "config", "user.name", "Test User")
+	cmd.Dir = tempDir
+	_ = cmd.Run()
 
 	// Test getting repo info from non-git directory
 	nonGitDir, err := os.MkdirTemp("", "non-git-")
@@ -269,8 +273,12 @@ func TestService_IsValidCommit(t *testing.T) {
 	}
 
 	// Configure git user
-	_ = exec.Command("git", "config", "user.email", "test@example.com").Run()
-	_ = exec.Command("git", "config", "user.name", "Test User").Run()
+	cmd = exec.Command("git", "config", "user.email", "test@example.com")
+	cmd.Dir = tempDir
+	_ = cmd.Run()
+	cmd = exec.Command("git", "config", "user.name", "Test User")
+	cmd.Dir = tempDir
+	_ = cmd.Run()
 
 	// Create a file and commit
 	testFile := filepath.Join(tempDir, "test.txt")
