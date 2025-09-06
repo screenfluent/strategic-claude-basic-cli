@@ -76,3 +76,17 @@ func (c *InstallConfig) ShouldCreateBackup() bool {
 func (c *InstallConfig) ShouldPromptUser() bool {
 	return !c.SkipConfirm && !c.DryRun
 }
+
+// Validate checks that the configuration is valid
+func (c *InstallConfig) Validate() error {
+	if c.TargetDir == "" {
+		return NewAppError(ErrorCodeInvalidPath, "target directory cannot be empty", nil)
+	}
+
+	// Both force and force-core cannot be true at the same time
+	if c.Force && c.ForceCore {
+		return NewAppError(ErrorCodeInvalidConfiguration, "cannot specify both --force and --force-core flags", nil)
+	}
+
+	return nil
+}

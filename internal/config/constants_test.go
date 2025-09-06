@@ -9,7 +9,7 @@ import (
 func TestGetFrameworkDirectories(t *testing.T) {
 	dirs := GetFrameworkDirectories()
 
-	expectedDirs := []string{CoreDir, GuidesDir, TemplatesDir, ConfigDir}
+	expectedDirs := []string{CoreDir, GuidesDir, TemplatesDir}
 
 	if len(dirs) != len(expectedDirs) {
 		t.Errorf("Expected %d directories, got %d", len(expectedDirs), len(dirs))

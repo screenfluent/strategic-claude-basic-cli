@@ -325,7 +325,6 @@ func TestService_CheckInstallation_MissingFrameworkDirectories(t *testing.T) {
 	expectedIssues := []string{
 		"Missing framework directory: guides",
 		"Missing framework directory: templates",
-		"Missing framework directory: config",
 		"Missing core subdirectory: core/commands",
 		"Missing core subdirectory: core/hooks",
 	}

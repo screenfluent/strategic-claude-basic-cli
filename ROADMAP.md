@@ -103,22 +103,22 @@ This roadmap outlines the incremental development approach for building the Stra
 - [x] Support cleanup on failure
 
 ### 4.3 Init Command
-- [ ] Complete init command implementation
-- [ ] Add comprehensive flag support (--force, --force-core, --yes, --no-backup)
-- [ ] Implement confirmation prompt with installation analysis
-- [ ] Implement selective update logic for --force-core flag (replace core/, guides/, templates/ only)
-- [ ] Implement dry-run functionality
-- [ ] Add progress reporting
+- [x] Complete init command implementation
+- [x] Add comprehensive flag support (--force, --force-core, --yes, --no-backup)
+- [x] Implement confirmation prompt with installation analysis
+- [x] Implement selective update logic for --force-core flag (replace core/, guides/, templates/ only)
+- [x] Implement dry-run functionality
+- [x] Add progress reporting
 
 ### 4.4 Integration Testing
-- [ ] Test complete init workflow (full installation)
-- [ ] Test --force-core selective updates
-- [ ] Test confirmation prompts and --yes flag
-- [ ] Test user cancellation scenarios
-- [ ] Validate preservation of user directories
-- [ ] Validate against real repositories
-- [ ] Test error scenarios
-- [ ] Performance testing
+- [x] Test complete init workflow (full installation)
+- [x] Test --force-core selective updates
+- [x] Test confirmation prompts and --yes flag
+- [x] Test user cancellation scenarios
+- [x] Validate preservation of user directories
+- [x] Validate against real repositories
+- [x] Test error scenarios
+- [x] Performance testing
 
 **Deliverables**:
 - Fully functional init command

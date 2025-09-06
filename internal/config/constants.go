@@ -86,7 +86,6 @@ func GetFrameworkDirectories() []string {
 		CoreDir,
 		GuidesDir,
 		TemplatesDir,
-		ConfigDir,
 	}
 }
 
