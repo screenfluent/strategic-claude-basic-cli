@@ -91,16 +91,16 @@ This roadmap outlines the incremental development approach for building the Stra
 **Goal**: Complete installation functionality
 
 ### 4.1 Installation Logic
-- [ ] Implement installer service
-- [ ] Add directory structure creation
-- [ ] Handle existing installation detection
-- [ ] Create backup functionality
+- [x] Implement installer service
+- [x] Add directory structure creation
+- [x] Handle existing installation detection
+- [x] Create backup functionality
 
 ### 4.2 Symlink Management
-- [ ] Implement symlink creation service
-- [ ] Handle relative path calculation
-- [ ] Add symlink validation
-- [ ] Support cleanup on failure
+- [x] Implement symlink creation service
+- [x] Handle relative path calculation
+- [x] Add symlink validation
+- [x] Support cleanup on failure
 
 ### 4.3 Init Command
 - [ ] Complete init command implementation
