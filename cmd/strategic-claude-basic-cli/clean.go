@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"strategic-claude-basic-cli/internal/services/cleaner"
+	"strategic-claude-basic-cli/internal/services/status"
 	"strategic-claude-basic-cli/internal/utils"
 )
 
@@ -55,7 +56,32 @@ Examples:
 
 		// Initialize services
 		cleanerService := cleaner.New()
+		statusService := status.NewService()
 		interactionService := utils.NewInteractionService()
+
+		// Check if there's anything to clean first
+		statusInfo, err := statusService.CheckInstallation(absTarget)
+		if err != nil {
+			return fmt.Errorf("failed to check installation status: %w", err)
+		}
+
+		// Check if there's any Strategic Claude Basic content to clean
+		hasValidSymlinks := false
+		for _, symlink := range statusInfo.Symlinks {
+			if symlink.Valid || symlink.Exists {
+				hasValidSymlinks = true
+				break
+			}
+		}
+
+		hasStrategicContent := statusInfo.StrategicClaudeDir || // Has .strategic-claude-basic
+			hasValidSymlinks || // Has valid or existing strategic symlinks
+			statusInfo.IsInstalled // Fully installed
+
+		if !hasStrategicContent {
+			utils.DisplayWarning("No Strategic Claude Basic installation found")
+			return nil
+		}
 
 		// Confirm cleanup operation unless --force is used
 		if !cleanForce {

@@ -179,6 +179,14 @@ func getInstallationConfirmation(plan *models.InstallationPlan) (bool, error) {
 		fmt.Println()
 	}
 
+	if len(plan.SymlinksToCreate) > 0 {
+		fmt.Println("Symlinks to be created:")
+		for _, symlink := range plan.SymlinksToCreate {
+			fmt.Printf("  → %s\n", symlink)
+		}
+		fmt.Println()
+	}
+
 	if len(plan.WillReplace) > 0 {
 		fmt.Println("Files/directories to be replaced:")
 		for _, item := range plan.WillReplace {
@@ -300,11 +308,6 @@ func displayDryRun(plan *models.InstallationPlan) error {
 func displayPostInstallInfo(plan *models.InstallationPlan) {
 	fmt.Println()
 	fmt.Println("🎉 Strategic Claude Basic has been installed!")
-	fmt.Println()
-	fmt.Println("Next steps:")
-	fmt.Println("1. Review the Strategic Claude Basic guides in .strategic-claude-basic/guides/")
-	fmt.Println("2. Customize your project-specific configuration")
-	fmt.Println("3. Start using Claude Code with the strategic agents, commands, and hooks")
 	fmt.Println()
 	fmt.Printf("Use 'strategic-claude-basic-cli status -t %s' to check installation status.\n", plan.TargetDir)
 }
