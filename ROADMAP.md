@@ -51,10 +51,10 @@ This roadmap outlines the incremental development approach for building the Stra
 - [x] Build permission checking
 
 ### 2.3 Basic Testing
-- [ ] Set up testing framework
-- [ ] Create mock file system for tests
-- [ ] Add unit tests for utilities
-- [ ] Test error handling paths
+- [x] Set up testing framework
+- [x] Create mock file system for tests
+- [x] Add unit tests for utilities
+- [x] Test error handling paths
 
 **Deliverables**:
 - Git operations working reliably
@@ -233,7 +233,7 @@ Each phase must meet these criteria before proceeding:
 - [ ] --force-core preserves user content reliably (archives/, issues/, plan/, research/, summary/)
 - [ ] Clear error messages for all failure modes
 - [ ] Shell completions work in major shells
-- [ ] Comprehensive test coverage (>80%)
+- [x] Comprehensive test coverage (>80%)
 
 ### Risk Mitigation
 
