@@ -1,0 +1,494 @@
+package filesystem
+
+import (
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
+	"strategic-claude-basic-cli/internal/config"
+	"strategic-claude-basic-cli/internal/models"
+	"strategic-claude-basic-cli/internal/utils"
+)
+
+// Service handles file system operations for the Strategic Claude Basic CLI
+type Service struct {
+	pathValidator *utils.PathValidator
+}
+
+// New creates a new filesystem service instance
+func New() *Service {
+	return &Service{
+		pathValidator: utils.NewPathValidator(),
+	}
+}
+
+// DirectoryOperations provides directory manipulation functions
+
+// CreateDirectory creates a directory with proper permissions, including parent directories
+func (s *Service) CreateDirectory(path string) error {
+	if path == "" {
+		return models.NewAppError(
+			models.ErrorCodeValidationFailed,
+			"Directory path cannot be empty",
+			nil,
+		)
+	}
+
+	// Resolve to absolute path
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return models.NewFileSystemError(models.ErrorCodeInvalidPath, path, err)
+	}
+
+	// Check if directory already exists
+	if info, err := os.Stat(absPath); err == nil {
+		if info.IsDir() {
+			return nil // Already exists and is a directory
+		}
+		return models.NewFileSystemError(
+			models.ErrorCodeFileAlreadyExists,
+			absPath,
+			fmt.Errorf("path exists but is not a directory"),
+		)
+	}
+
+	// Create directory with proper permissions
+	err = os.MkdirAll(absPath, config.DirPermissions)
+	if err != nil {
+		if os.IsPermission(err) {
+			return models.NewFileSystemError(models.ErrorCodePermissionDenied, absPath, err)
+		}
+		return models.NewFileSystemError(models.ErrorCodeFileSystemError, absPath, err)
+	}
+
+	return nil
+}
+
+// RemoveDirectory removes a directory with safety checks
+func (s *Service) RemoveDirectory(path string) error {
+	if path == "" {
+		return models.NewAppError(
+			models.ErrorCodeValidationFailed,
+			"Directory path cannot be empty",
+			nil,
+		)
+	}
+
+	// Resolve to absolute path
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return models.NewFileSystemError(models.ErrorCodeInvalidPath, path, err)
+	}
+
+	// Safety check - don't remove system directories
+	if s.isSystemPath(absPath) {
+		return models.NewAppError(
+			models.ErrorCodeValidationFailed,
+			fmt.Sprintf("Refusing to remove system directory: %s", absPath),
+			nil,
+		)
+	}
+
+	// Check if directory exists
+	if _, err := os.Stat(absPath); os.IsNotExist(err) {
+		return nil // Already doesn't exist
+	}
+
+	// Remove directory
+	err = os.RemoveAll(absPath)
+	if err != nil {
+		if os.IsPermission(err) {
+			return models.NewFileSystemError(models.ErrorCodePermissionDenied, absPath, err)
+		}
+		return models.NewFileSystemError(models.ErrorCodeFileSystemError, absPath, err)
+	}
+
+	return nil
+}
+
+// BackupDirectory creates a backup of an existing directory
+func (s *Service) BackupDirectory(sourcePath, backupPath string) error {
+	if sourcePath == "" || backupPath == "" {
+		return models.NewAppError(
+			models.ErrorCodeValidationFailed,
+			"Source and backup paths cannot be empty",
+			nil,
+		)
+	}
+
+	// Resolve paths
+	sourceAbs, err := filepath.Abs(sourcePath)
+	if err != nil {
+		return models.NewFileSystemError(models.ErrorCodeInvalidPath, sourcePath, err)
+	}
+
+	backupAbs, err := filepath.Abs(backupPath)
+	if err != nil {
+		return models.NewFileSystemError(models.ErrorCodeInvalidPath, backupPath, err)
+	}
+
+	// Check if source exists and is directory
+	sourceInfo, err := os.Stat(sourceAbs)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return models.NewFileSystemError(models.ErrorCodeDirectoryNotFound, sourceAbs, err)
+		}
+		return models.NewFileSystemError(models.ErrorCodeFileSystemError, sourceAbs, err)
+	}
+
+	if !sourceInfo.IsDir() {
+		return models.NewAppError(
+			models.ErrorCodeValidationFailed,
+			fmt.Sprintf("Source path is not a directory: %s", sourceAbs),
+			nil,
+		)
+	}
+
+	// Check if backup path already exists
+	if _, err := os.Stat(backupAbs); err == nil {
+		return models.NewFileSystemError(
+			models.ErrorCodeFileAlreadyExists,
+			backupAbs,
+			fmt.Errorf("backup directory already exists"),
+		)
+	}
+
+	// Copy directory to backup location
+	return s.CopyDirectory(sourceAbs, backupAbs)
+}
+
+// EnsureDirectoryStructure creates the Strategic Claude Basic directory structure
+func (s *Service) EnsureDirectoryStructure(targetDir string) error {
+	strategicDir := filepath.Join(targetDir, config.StrategicClaudeBasicDir)
+
+	// Create main directory
+	if err := s.CreateDirectory(strategicDir); err != nil {
+		return err
+	}
+
+	// Create framework directories
+	frameworkDirs := config.GetFrameworkDirectories()
+	for _, dir := range frameworkDirs {
+		dirPath := filepath.Join(strategicDir, dir)
+		if err := s.CreateDirectory(dirPath); err != nil {
+			return err
+		}
+	}
+
+	// Create user preserved directories
+	userDirs := config.GetUserPreservedDirectories()
+	for _, dir := range userDirs {
+		dirPath := filepath.Join(strategicDir, dir)
+		if err := s.CreateDirectory(dirPath); err != nil {
+			return err
+		}
+	}
+
+	// Create core subdirectories
+	coreDir := filepath.Join(strategicDir, config.CoreDir)
+	coreSubdirs := []string{config.AgentsDir, config.CommandsDir, config.HooksDir}
+	for _, subdir := range coreSubdirs {
+		subdirPath := filepath.Join(coreDir, subdir)
+		if err := s.CreateDirectory(subdirPath); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// File Operations
+
+// CopyFile copies a single file with permission preservation
+func (s *Service) CopyFile(sourcePath, destPath string) error {
+	if sourcePath == "" || destPath == "" {
+		return models.NewAppError(
+			models.ErrorCodeValidationFailed,
+			"Source and destination paths cannot be empty",
+			nil,
+		)
+	}
+
+	// Open source file
+	sourceFile, err := os.Open(sourcePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return models.NewFileSystemError(models.ErrorCodeDirectoryNotFound, sourcePath, err)
+		}
+		if os.IsPermission(err) {
+			return models.NewFileSystemError(models.ErrorCodePermissionDenied, sourcePath, err)
+		}
+		return models.NewFileSystemError(models.ErrorCodeFileSystemError, sourcePath, err)
+	}
+	defer sourceFile.Close()
+
+	// Get source file info for permissions
+	sourceInfo, err := sourceFile.Stat()
+	if err != nil {
+		return models.NewFileSystemError(models.ErrorCodeFileSystemError, sourcePath, err)
+	}
+
+	// Create destination directory if it doesn't exist
+	destDir := filepath.Dir(destPath)
+	if err := s.CreateDirectory(destDir); err != nil {
+		return err
+	}
+
+	// Create destination file
+	destFile, err := os.Create(destPath)
+	if err != nil {
+		if os.IsPermission(err) {
+			return models.NewFileSystemError(models.ErrorCodePermissionDenied, destPath, err)
+		}
+		return models.NewFileSystemError(models.ErrorCodeFileSystemError, destPath, err)
+	}
+	defer destFile.Close()
+
+	// Copy file contents
+	_, err = io.Copy(destFile, sourceFile)
+	if err != nil {
+		return models.NewFileSystemError(models.ErrorCodeFileSystemError, destPath, err)
+	}
+
+	// Set permissions to match source
+	err = os.Chmod(destPath, sourceInfo.Mode())
+	if err != nil {
+		return models.NewFileSystemError(models.ErrorCodePermissionDenied, destPath, err)
+	}
+
+	return nil
+}
+
+// CopyDirectory copies an entire directory tree
+func (s *Service) CopyDirectory(sourcePath, destPath string) error {
+	if sourcePath == "" || destPath == "" {
+		return models.NewAppError(
+			models.ErrorCodeValidationFailed,
+			"Source and destination paths cannot be empty",
+			nil,
+		)
+	}
+
+	// Get source directory info
+	sourceInfo, err := os.Stat(sourcePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return models.NewFileSystemError(models.ErrorCodeDirectoryNotFound, sourcePath, err)
+		}
+		return models.NewFileSystemError(models.ErrorCodeFileSystemError, sourcePath, err)
+	}
+
+	if !sourceInfo.IsDir() {
+		return models.NewAppError(
+			models.ErrorCodeValidationFailed,
+			fmt.Sprintf("Source path is not a directory: %s", sourcePath),
+			nil,
+		)
+	}
+
+	// Create destination directory
+	if err := s.CreateDirectory(destPath); err != nil {
+		return err
+	}
+
+	// Set permissions to match source
+	err = os.Chmod(destPath, sourceInfo.Mode())
+	if err != nil {
+		return models.NewFileSystemError(models.ErrorCodePermissionDenied, destPath, err)
+	}
+
+	// Walk through source directory
+	return filepath.Walk(sourcePath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip root directory (already created)
+		if path == sourcePath {
+			return nil
+		}
+
+		// Calculate relative path
+		relPath, err := filepath.Rel(sourcePath, path)
+		if err != nil {
+			return models.NewFileSystemError(models.ErrorCodeFileSystemError, path, err)
+		}
+
+		destItemPath := filepath.Join(destPath, relPath)
+
+		switch {
+		case info.IsDir():
+			// Create directory
+			err = os.MkdirAll(destItemPath, info.Mode())
+			if err != nil {
+				return models.NewFileSystemError(models.ErrorCodeFileSystemError, destItemPath, err)
+			}
+		case info.Mode()&os.ModeSymlink != 0:
+			// Handle symlinks
+			linkTarget, err := os.Readlink(path)
+			if err != nil {
+				return models.NewFileSystemError(models.ErrorCodeFileSystemError, path, err)
+			}
+			err = os.Symlink(linkTarget, destItemPath)
+			if err != nil {
+				return models.NewFileSystemError(models.ErrorCodeSymlinkCreationFailed, destItemPath, err)
+			}
+		default:
+			// Copy regular file
+			if err := s.CopyFile(path, destItemPath); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
+// CopyFrameworkFiles copies only the framework directories (core, guides, templates)
+func (s *Service) CopyFrameworkFiles(sourceDir, destDir string) error {
+	frameworkDirs := config.GetCoreDirectories()
+
+	for _, dir := range frameworkDirs {
+		sourcePath := filepath.Join(sourceDir, dir)
+		destPath := filepath.Join(destDir, dir)
+
+		// Check if source directory exists
+		if _, err := os.Stat(sourcePath); os.IsNotExist(err) {
+			continue // Skip if source doesn't have this directory
+		}
+
+		// Remove existing directory if it exists
+		if _, err := os.Stat(destPath); err == nil {
+			if err := s.RemoveDirectory(destPath); err != nil {
+				return err
+			}
+		}
+
+		// Copy the directory
+		if err := s.CopyDirectory(sourcePath, destPath); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// PreserveUserContent ensures user directories are not overwritten
+func (s *Service) PreserveUserContent(targetDir string) error {
+	userDirs := config.GetUserPreservedDirectories()
+	strategicDir := filepath.Join(targetDir, config.StrategicClaudeBasicDir)
+
+	for _, dir := range userDirs {
+		dirPath := filepath.Join(strategicDir, dir)
+
+		// Create directory if it doesn't exist (but don't overwrite)
+		if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+			if err := s.CreateDirectory(dirPath); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// Path Operations
+
+// IsSubPath checks if childPath is within parentPath (prevents directory traversal)
+func (s *Service) IsSubPath(parentPath, childPath string) (bool, error) {
+	parentAbs, err := filepath.Abs(parentPath)
+	if err != nil {
+		return false, models.NewFileSystemError(models.ErrorCodeInvalidPath, parentPath, err)
+	}
+
+	childAbs, err := filepath.Abs(childPath)
+	if err != nil {
+		return false, models.NewFileSystemError(models.ErrorCodeInvalidPath, childPath, err)
+	}
+
+	// Clean paths to handle . and .. properly
+	parentClean := filepath.Clean(parentAbs)
+	childClean := filepath.Clean(childAbs)
+
+	// Check if child path starts with parent path
+	return strings.HasPrefix(childClean, parentClean+string(os.PathSeparator)) || childClean == parentClean, nil
+}
+
+// GetRelativePath gets relative path from base to target (for symlinks)
+func (s *Service) GetRelativePath(basePath, targetPath string) (string, error) {
+	baseAbs, err := filepath.Abs(basePath)
+	if err != nil {
+		return "", models.NewFileSystemError(models.ErrorCodeInvalidPath, basePath, err)
+	}
+
+	targetAbs, err := filepath.Abs(targetPath)
+	if err != nil {
+		return "", models.NewFileSystemError(models.ErrorCodeInvalidPath, targetPath, err)
+	}
+
+	relPath, err := filepath.Rel(baseAbs, targetAbs)
+	if err != nil {
+		return "", models.NewFileSystemError(models.ErrorCodeFileSystemError, targetPath, err)
+	}
+
+	return relPath, nil
+}
+
+// Permission Management
+
+// SetFilePermissions sets proper file permissions
+func (s *Service) SetFilePermissions(path string) error {
+	return os.Chmod(path, config.FilePermissions)
+}
+
+// SetDirectoryPermissions sets proper directory permissions
+func (s *Service) SetDirectoryPermissions(path string) error {
+	return os.Chmod(path, config.DirPermissions)
+}
+
+// CheckWritePermission checks if we have write permission to a directory
+func (s *Service) CheckWritePermission(path string) error {
+	return s.pathValidator.ValidateDirectoryWritable(path)
+}
+
+// Helper functions
+
+// isSystemPath checks if a path is a system directory that should not be removed
+func (s *Service) isSystemPath(path string) bool {
+	systemPaths := []string{
+		"/",
+		"/bin",
+		"/boot",
+		"/dev",
+		"/etc",
+		"/home",
+		"/lib",
+		"/lib64",
+		"/proc",
+		"/root",
+		"/sbin",
+		"/sys",
+		"/tmp",
+		"/usr",
+		"/var",
+	}
+
+	cleanPath := filepath.Clean(path)
+	for _, sysPath := range systemPaths {
+		if cleanPath == sysPath {
+			return true
+		}
+	}
+
+	return false
+}
+
+// GetBackupPath generates a backup path with timestamp
+func (s *Service) GetBackupPath(targetDir string) string {
+	timestamp := time.Now().Format("20060102-150405")
+	backupName := fmt.Sprintf("%s%s", config.BackupDirPrefix, timestamp)
+	return filepath.Join(targetDir, backupName)
+}

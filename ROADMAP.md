@@ -45,10 +45,10 @@ This roadmap outlines the incremental development approach for building the Stra
 - [x] Add git installation validation
 
 ### 2.2 File System Utilities
-- [ ] Create directory manipulation functions
-- [ ] Implement file copying utilities
-- [ ] Add path validation and resolution
-- [ ] Build permission checking
+- [x] Create directory manipulation functions
+- [x] Implement file copying utilities
+- [x] Add path validation and resolution
+- [x] Build permission checking
 
 ### 2.3 Basic Testing
 - [ ] Set up testing framework
