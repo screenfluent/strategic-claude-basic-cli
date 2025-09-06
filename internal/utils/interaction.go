@@ -91,3 +91,15 @@ func VerbosePrintf(verbose bool, format string, args ...interface{}) {
 		fmt.Printf("🔍 "+format, args...)
 	}
 }
+
+// ConfirmCleanup displays a cleanup confirmation prompt with directory information
+func (i *InteractionService) ConfirmCleanup(targetDir string) (bool, error) {
+	fmt.Printf("\n⚠️  This will remove Strategic Claude Basic from: %s\n", targetDir)
+	fmt.Println("This action will:")
+	fmt.Println("  • Remove the .strategic-claude-basic directory")
+	fmt.Println("  • Remove Strategic Claude symlinks from .claude directory")
+	fmt.Println("  • Preserve any user-created content in .claude")
+	fmt.Println()
+
+	return i.ConfirmPrompt("Are you sure you want to proceed?")
+}

@@ -5,6 +5,9 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+
+	"strategic-claude-basic-cli/internal/services/cleaner"
+	"strategic-claude-basic-cli/internal/utils"
 )
 
 var (
@@ -50,9 +53,34 @@ Examples:
 			fmt.Printf("Force: %v\n", cleanForce)
 		}
 
-		// TODO: Implement cleanup logic in Phase 5
-		fmt.Printf("Clean command stub - target: %s\n", absTarget)
-		fmt.Println("Cleanup logic will be implemented in Phase 5")
+		// Initialize services
+		cleanerService := cleaner.New()
+		interactionService := utils.NewInteractionService()
+
+		// Confirm cleanup operation unless --force is used
+		if !cleanForce {
+			confirmed, err := interactionService.ConfirmCleanup(absTarget)
+			if err != nil {
+				return fmt.Errorf("failed to get user confirmation: %w", err)
+			}
+			if !confirmed {
+				fmt.Println("Cleanup cancelled by user")
+				return nil
+			}
+		}
+
+		// Perform cleanup
+		result, err := cleanerService.RemoveInstallation(absTarget)
+		if err != nil {
+			return fmt.Errorf("cleanup failed: %w", err)
+		}
+
+		// Display results
+		displayCleanupResults(result, verbose)
+
+		if !result.Success {
+			return fmt.Errorf("cleanup completed with errors")
+		}
 
 		return nil
 	},
@@ -62,4 +90,60 @@ func init() {
 	rootCmd.AddCommand(cleanCmd)
 
 	cleanCmd.Flags().BoolVarP(&cleanForce, "force", "f", false, "force cleanup without confirmation")
+}
+
+// displayCleanupResults shows the results of the cleanup operation
+func displayCleanupResults(result *cleaner.CleanupResult, verbose bool) {
+	fmt.Println()
+
+	if result.Success {
+		if result.RemovedDirectory {
+			utils.DisplaySuccess("Removed .strategic-claude-basic directory")
+		}
+
+		if len(result.RemovedSymlinks) > 0 {
+			utils.DisplaySuccess(fmt.Sprintf("Removed %d Strategic Claude symlink(s)", len(result.RemovedSymlinks)))
+			if verbose {
+				for _, symlink := range result.RemovedSymlinks {
+					fmt.Printf("  • %s\n", symlink)
+				}
+			}
+		}
+
+		if len(result.CleanedDirectories) > 0 {
+			utils.DisplaySuccess(fmt.Sprintf("Cleaned up %d empty director(ies)", len(result.CleanedDirectories)))
+			if verbose {
+				for _, dir := range result.CleanedDirectories {
+					fmt.Printf("  • %s\n", dir)
+				}
+			}
+		}
+
+		if len(result.PreservedFiles) > 0 {
+			utils.DisplayInfo(fmt.Sprintf("Preserved %d user file(s)", len(result.PreservedFiles)))
+			if verbose {
+				for _, file := range result.PreservedFiles {
+					fmt.Printf("  • %s\n", file)
+				}
+			}
+		}
+
+		if len(result.RemovedSymlinks) == 0 && !result.RemovedDirectory && len(result.CleanedDirectories) == 0 {
+			utils.DisplayInfo("No Strategic Claude Basic installation found to clean")
+		} else {
+			utils.DisplaySuccess("Strategic Claude Basic cleanup completed successfully")
+		}
+	} else {
+		utils.DisplayError(fmt.Errorf("cleanup completed with errors"))
+	}
+
+	// Display warnings
+	for _, warning := range result.Warnings {
+		utils.DisplayWarning(warning)
+	}
+
+	// Display errors
+	for _, err := range result.Errors {
+		utils.DisplayError(fmt.Errorf("%s", err))
+	}
 }

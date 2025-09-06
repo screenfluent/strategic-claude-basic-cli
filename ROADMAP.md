@@ -129,22 +129,22 @@ This roadmap outlines the incremental development approach for building the Stra
 **Goal**: Complete cleanup functionality
 
 ### 5.1 Cleanup Logic
-- [ ] Implement symlink removal
-- [ ] Add directory cleanup
-- [ ] Handle partial installations
-- [ ] Preserve user content
+- [x] Implement symlink removal
+- [x] Add directory cleanup
+- [x] Handle partial installations
+- [x] Preserve user content
 
 ### 5.2 Clean Command
-- [ ] Complete clean command implementation
-- [ ] Add confirmation prompts
-- [ ] Implement force flag
-- [ ] Add safety checks
+- [x] Complete clean command implementation
+- [x] Add confirmation prompts
+- [x] Implement force flag
+- [x] Add safety checks
 
 ### 5.3 Edge Case Handling
-- [ ] Handle broken symlinks
-- [ ] Deal with permission issues
+- [x] Handle broken symlinks
+- [x] Deal with permission issues
 - [ ] Manage concurrent modifications
-- [ ] Test cleanup reliability
+- [x] Test cleanup reliability
 
 **Deliverables**:
 - Working clean command
@@ -227,11 +227,11 @@ Each phase must meet these criteria before proceeding:
 - Performance meets requirements
 
 #### Overall Success Metrics
-- [ ] All four commands (init, clean, status, completions) working
-- [ ] Installation completes in under 30 seconds
-- [ ] Zero data loss during operations
-- [ ] --force-core preserves user content reliably (archives/, issues/, plan/, research/, summary/)
-- [ ] Clear error messages for all failure modes
+- [ ] All four commands (init, clean, status, completions) working (3/4 complete: init ✅, clean ✅, status ✅, completions ⏳)
+- [x] Installation completes in under 30 seconds
+- [x] Zero data loss during operations
+- [x] --force-core preserves user content reliably (archives/, issues/, plan/, research/, summary/)
+- [x] Clear error messages for all failure modes
 - [ ] Shell completions work in major shells
 - [x] Comprehensive test coverage (>80%)
 
