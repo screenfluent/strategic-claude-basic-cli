@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"strategic-claude-basic-cli/internal/models"
+	"strategic-claude-basic-cli/internal/services/status"
+
 	"github.com/spf13/cobra"
 )
 
@@ -41,12 +44,99 @@ Examples:
 			fmt.Printf("Checking directory: %s\n", absTarget)
 		}
 
-		// TODO: Implement status checking logic in Phase 3
-		fmt.Printf("Status command stub - target: %s\n", absTarget)
-		fmt.Println("Status checking logic will be implemented in Phase 3")
+		// Create status service and check installation
+		statusService := status.NewService()
+		statusInfo, err := statusService.CheckInstallation(absTarget)
+		if err != nil {
+			return fmt.Errorf("failed to check installation status: %w", err)
+		}
+
+		// Display status information
+		displayStatus(statusInfo, statusService, verbose)
 
 		return nil
 	},
+}
+
+// displayStatus formats and displays the installation status information
+func displayStatus(statusInfo *models.StatusInfo, statusService *status.Service, verbose bool) {
+	// Display main status summary
+	summary := statusService.GetStatusSummary(statusInfo)
+	if statusInfo.IsInstalled {
+		if statusInfo.HasIssues() {
+			fmt.Printf("⚠️  %s\n", summary)
+		} else {
+			fmt.Printf("✅ %s\n", summary)
+		}
+	} else {
+		fmt.Printf("❌ %s\n", summary)
+	}
+
+	// Display directory information
+	fmt.Printf("\nDirectories:\n")
+	if statusInfo.StrategicClaudeDir {
+		fmt.Printf("  ✅ Strategic Claude Basic: %s\n", statusInfo.StrategicClaudeDirPath)
+	} else {
+		fmt.Printf("  ❌ Strategic Claude Basic: %s (not found)\n", statusInfo.StrategicClaudeDirPath)
+	}
+
+	if statusInfo.ClaudeDir {
+		fmt.Printf("  ✅ Claude Integration: %s\n", statusInfo.ClaudeDirPath)
+	} else {
+		fmt.Printf("  ❌ Claude Integration: %s (not found)\n", statusInfo.ClaudeDirPath)
+	}
+
+	// Display symlink information
+	if len(statusInfo.Symlinks) > 0 {
+		fmt.Printf("\nSymlinks:\n")
+		for _, symlink := range statusInfo.Symlinks {
+			switch {
+			case symlink.Valid:
+				fmt.Printf("  ✅ %s → %s\n", symlink.Name, symlink.Target)
+			case symlink.Exists:
+				fmt.Printf("  ⚠️  %s → %s (%s)\n", symlink.Name, symlink.Target, symlink.Error)
+			default:
+				fmt.Printf("  ❌ %s (not found)\n", symlink.Name)
+			}
+		}
+	}
+
+	// Display issues
+	if statusInfo.HasIssues() {
+		fmt.Printf("\nIssues Found:\n")
+		for _, issue := range statusInfo.Issues {
+			fmt.Printf("  - %s\n", issue)
+		}
+	}
+
+	// Verbose information
+	if verbose {
+		fmt.Printf("\nDetailed Information:\n")
+		fmt.Printf("  Target Directory: %s\n", statusInfo.TargetDir)
+		fmt.Printf("  Valid Symlinks: %d/%d\n", statusInfo.ValidSymlinks(), len(statusInfo.Symlinks))
+
+		if statusInfo.InstallationDate != nil {
+			fmt.Printf("  Installation Date: %s\n", statusInfo.InstallationDate.Format("2006-01-02 15:04:05"))
+		}
+
+		if statusInfo.Version != "" {
+			fmt.Printf("  Version: %s\n", statusInfo.Version)
+		}
+
+		if statusInfo.CommitHash != "" {
+			fmt.Printf("  Commit Hash: %s\n", statusInfo.CommitHash)
+		}
+	}
+
+	// Add recommendation for next steps
+	if !statusInfo.IsInstalled {
+		fmt.Printf("\nTo install Strategic Claude Basic, run:\n")
+		fmt.Printf("  %s init\n", "strategic-claude-basic-cli")
+	} else if statusInfo.HasIssues() {
+		fmt.Printf("\nTo fix issues, you may need to:\n")
+		fmt.Printf("  - Run '%s clean' to remove the installation\n", "strategic-claude-basic-cli")
+		fmt.Printf("  - Then run '%s init' to reinstall\n", "strategic-claude-basic-cli")
+	}
 }
 
 func init() {

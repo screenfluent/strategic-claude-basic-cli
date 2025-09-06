@@ -1,0 +1,218 @@
+package status
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"strategic-claude-basic-cli/internal/config"
+	"strategic-claude-basic-cli/internal/models"
+	"strategic-claude-basic-cli/internal/utils"
+)
+
+// Service provides status checking functionality
+type Service struct {
+	pathValidator  *utils.PathValidator
+	fsValidator    *utils.FileSystemValidator
+	inputValidator *utils.InputValidator
+}
+
+// NewService creates a new status service
+func NewService() *Service {
+	return &Service{
+		pathValidator:  utils.NewPathValidator(),
+		fsValidator:    utils.NewFileSystemValidator(),
+		inputValidator: utils.NewInputValidator(),
+	}
+}
+
+// CheckInstallation performs comprehensive status checking for a target directory
+func (s *Service) CheckInstallation(targetDir string) (*models.StatusInfo, error) {
+	// Resolve target directory to absolute path
+	absTarget, err := s.pathValidator.ResolvePath(targetDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve target directory: %w", err)
+	}
+
+	// Validate target directory exists
+	if err := s.pathValidator.ValidateDirectory(absTarget); err != nil {
+		return nil, fmt.Errorf("invalid target directory: %w", err)
+	}
+
+	// Initialize status info
+	status := models.NewStatusInfo(absTarget)
+	status.StrategicClaudeDirPath = filepath.Join(absTarget, config.StrategicClaudeBasicDir)
+	status.ClaudeDirPath = filepath.Join(absTarget, config.ClaudeDir)
+
+	// Check .strategic-claude-basic directory
+	if err := s.detectStrategicClaudeBasic(status); err != nil {
+		return nil, fmt.Errorf("failed to check strategic-claude-basic directory: %w", err)
+	}
+
+	// Check .claude directory structure
+	if err := s.verifyClaudeDirectory(status); err != nil {
+		return nil, fmt.Errorf("failed to verify claude directory: %w", err)
+	}
+
+	// Validate symlinks
+	s.validateSymlinks(status)
+
+	// Identify any issues
+	s.identifyIssues(status)
+
+	// Determine overall installation status
+	status.IsInstalled = status.StrategicClaudeDir && status.ClaudeDir && status.ValidSymlinks() > 0
+
+	return status, nil
+}
+
+// detectStrategicClaudeBasic checks if the .strategic-claude-basic directory exists and is properly structured
+func (s *Service) detectStrategicClaudeBasic(status *models.StatusInfo) error {
+	strategicDir := status.StrategicClaudeDirPath
+
+	// Check if directory exists
+	info, err := os.Stat(strategicDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			status.StrategicClaudeDir = false
+			status.AddIssue(".strategic-claude-basic directory does not exist")
+			return nil
+		}
+		return fmt.Errorf("failed to stat strategic-claude-basic directory: %w", err)
+	}
+
+	if !info.IsDir() {
+		status.StrategicClaudeDir = false
+		status.AddIssue(".strategic-claude-basic exists but is not a directory")
+		return nil
+	}
+
+	status.StrategicClaudeDir = true
+
+	// Check for required framework directories
+	requiredDirs := config.GetFrameworkDirectories()
+	for _, dir := range requiredDirs {
+		dirPath := filepath.Join(strategicDir, dir)
+		if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+			status.AddIssue(fmt.Sprintf("Missing framework directory: %s", dir))
+		}
+	}
+
+	// Check for core subdirectories that will be symlinked
+	coreDir := filepath.Join(strategicDir, config.CoreDir)
+	requiredCoreSubdirs := []string{config.AgentsDir, config.CommandsDir, config.HooksDir}
+
+	for _, subdir := range requiredCoreSubdirs {
+		subdirPath := filepath.Join(coreDir, subdir)
+		if _, err := os.Stat(subdirPath); os.IsNotExist(err) {
+			status.AddIssue(fmt.Sprintf("Missing core subdirectory: core/%s", subdir))
+		}
+	}
+
+	return nil
+}
+
+// verifyClaudeDirectory checks if the .claude directory exists and has the correct structure
+func (s *Service) verifyClaudeDirectory(status *models.StatusInfo) error {
+	claudeDir := status.ClaudeDirPath
+
+	// Check if directory exists
+	info, err := os.Stat(claudeDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			status.ClaudeDir = false
+			status.AddIssue(".claude directory does not exist")
+			return nil
+		}
+		return fmt.Errorf("failed to stat claude directory: %w", err)
+	}
+
+	if !info.IsDir() {
+		status.ClaudeDir = false
+		status.AddIssue(".claude exists but is not a directory")
+		return nil
+	}
+
+	status.ClaudeDir = true
+
+	// Check for required subdirectories
+	requiredSubdirs := []string{config.AgentsDir, config.CommandsDir, config.HooksDir}
+	for _, subdir := range requiredSubdirs {
+		subdirPath := filepath.Join(claudeDir, subdir)
+		if _, err := os.Stat(subdirPath); os.IsNotExist(err) {
+			status.AddIssue(fmt.Sprintf("Missing .claude subdirectory: %s", subdir))
+		}
+	}
+
+	return nil
+}
+
+// validateSymlinks checks all required symlinks and their targets
+func (s *Service) validateSymlinks(status *models.StatusInfo) {
+	requiredSymlinks := config.GetRequiredSymlinks()
+
+	for symlinkPath, expectedTarget := range requiredSymlinks {
+		fullSymlinkPath := filepath.Join(status.ClaudeDirPath, symlinkPath)
+		// Use the relative target as-is - the ValidateSymlink function will handle path resolution
+
+		symlinkStatus, err := s.fsValidator.ValidateSymlink(fullSymlinkPath, expectedTarget)
+		if err != nil {
+			// Log error but continue checking other symlinks
+			status.AddIssue(fmt.Sprintf("Failed to check symlink %s: %v", symlinkPath, err))
+		}
+
+		if symlinkStatus != nil {
+			status.AddSymlink(*symlinkStatus)
+		}
+	}
+}
+
+// identifyIssues performs additional issue identification based on the gathered information
+func (s *Service) identifyIssues(status *models.StatusInfo) {
+	// Check for permission issues
+	if status.StrategicClaudeDir {
+		if err := s.pathValidator.ValidateDirectoryWritable(status.StrategicClaudeDirPath); err != nil {
+			status.AddIssue(fmt.Sprintf("Strategic Claude Basic directory is not writable: %v", err))
+		}
+	}
+
+	if status.ClaudeDir {
+		if err := s.pathValidator.ValidateDirectoryWritable(status.ClaudeDirPath); err != nil {
+			status.AddIssue(fmt.Sprintf("Claude directory is not writable: %v", err))
+		}
+	}
+
+	// Check for partial installation
+	if status.StrategicClaudeDir && !status.ClaudeDir {
+		status.AddIssue("Partial installation detected: .strategic-claude-basic exists but .claude directory is missing")
+	}
+
+	if !status.StrategicClaudeDir && status.ClaudeDir {
+		status.AddIssue("Partial installation detected: .claude directory exists but .strategic-claude-basic is missing")
+	}
+
+	// Check for symlink integrity
+	validSymlinks := status.ValidSymlinks()
+	totalSymlinks := len(status.Symlinks)
+
+	if totalSymlinks > 0 && validSymlinks < totalSymlinks {
+		status.AddIssue(fmt.Sprintf("Some symlinks are broken or invalid (%d/%d valid)", validSymlinks, totalSymlinks))
+	}
+
+	if status.StrategicClaudeDir && status.ClaudeDir && totalSymlinks == 0 {
+		status.AddIssue("Installation directories exist but no strategic symlinks were found")
+	}
+}
+
+// GetStatusSummary returns a human-readable summary of the installation status
+func (s *Service) GetStatusSummary(status *models.StatusInfo) string {
+	if !status.IsInstalled {
+		return "Strategic Claude Basic is not installed"
+	}
+
+	if status.HasIssues() {
+		return fmt.Sprintf("Strategic Claude Basic is installed but has %d issue(s)", len(status.Issues))
+	}
+
+	return "Strategic Claude Basic is installed and configured correctly"
+}
