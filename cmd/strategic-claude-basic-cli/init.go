@@ -56,6 +56,14 @@ func init() {
 	initCmd.Flags().BoolVarP(&yes, "yes", "y", false, "automatically answer yes to all prompts")
 	initCmd.Flags().BoolVar(&noBackup, "no-backup", false, "skip creating backups of existing files")
 	initCmd.Flags().BoolVar(&dryRun, "dry-run", false, "show what would be done without making changes")
+
+	// Custom completion for directory argument
+	initCmd.ValidArgsFunction = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) == 0 {
+			return []string{}, cobra.ShellCompDirectiveFilterDirs
+		}
+		return []string{}, cobra.ShellCompDirectiveNoFileComp
+	}
 }
 
 // runInit executes the init command logic

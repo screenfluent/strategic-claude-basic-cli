@@ -155,10 +155,13 @@ This roadmap outlines the incremental development approach for building the Stra
 **Goal**: Complete remaining features and polish
 
 ### 6.1 Shell Completions
-- [ ] Implement bash completions
-- [ ] Add zsh support
-- [ ] Create fish completions
-- [ ] Add PowerShell support
+- [x] Implement bash completions
+- [x] Add zsh support
+- [x] Create fish completions
+- [x] Add PowerShell support
+- [x] Add custom flag completions for --target directory completion
+- [x] Add directory argument completion for init/clean/status commands
+- [x] Create comprehensive test suite for completions
 
 ### 6.2 Documentation
 - [ ] Complete README with usage examples
@@ -227,12 +230,12 @@ Each phase must meet these criteria before proceeding:
 - Performance meets requirements
 
 #### Overall Success Metrics
-- [ ] All four commands (init, clean, status, completions) working (3/4 complete: init ✅, clean ✅, status ✅, completions ⏳)
+- [x] All four commands (init, clean, status, completions) working (4/4 complete: init ✅, clean ✅, status ✅, completions ✅)
 - [x] Installation completes in under 30 seconds
 - [x] Zero data loss during operations
 - [x] --force-core preserves user content reliably (archives/, issues/, plan/, research/, summary/)
 - [x] Clear error messages for all failure modes
-- [ ] Shell completions work in major shells
+- [x] Shell completions work in major shells (bash, zsh, fish, powershell)
 - [x] Comprehensive test coverage (>80%)
 
 ### Risk Mitigation

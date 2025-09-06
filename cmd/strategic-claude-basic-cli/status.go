@@ -141,4 +141,12 @@ func displayStatus(statusInfo *models.StatusInfo, statusService *status.Service,
 
 func init() {
 	rootCmd.AddCommand(statusCmd)
+
+	// Custom completion for directory argument
+	statusCmd.ValidArgsFunction = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) == 0 {
+			return []string{}, cobra.ShellCompDirectiveFilterDirs
+		}
+		return []string{}, cobra.ShellCompDirectiveNoFileComp
+	}
 }

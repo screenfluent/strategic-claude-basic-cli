@@ -90,6 +90,14 @@ func init() {
 	rootCmd.AddCommand(cleanCmd)
 
 	cleanCmd.Flags().BoolVarP(&cleanForce, "force", "f", false, "force cleanup without confirmation")
+
+	// Custom completion for directory argument
+	cleanCmd.ValidArgsFunction = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) == 0 {
+			return []string{}, cobra.ShellCompDirectiveFilterDirs
+		}
+		return []string{}, cobra.ShellCompDirectiveNoFileComp
+	}
 }
 
 // displayCleanupResults shows the results of the cleanup operation

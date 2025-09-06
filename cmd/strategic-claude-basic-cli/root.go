@@ -36,4 +36,12 @@ func init() {
 	// Global flags
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
 	rootCmd.PersistentFlags().StringVarP(&targetDir, "target", "t", ".", "target directory for operations")
+
+	// Custom completions for flags
+	if err := rootCmd.RegisterFlagCompletionFunc("target", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{}, cobra.ShellCompDirectiveFilterDirs
+	}); err != nil {
+		// This should not happen in normal operation, but we handle it for completeness
+		fmt.Fprintf(os.Stderr, "Warning: failed to register completion for --target flag: %v\n", err)
+	}
 }
