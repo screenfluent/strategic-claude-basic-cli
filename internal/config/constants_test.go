@@ -72,7 +72,7 @@ func TestGetCoreDirectories(t *testing.T) {
 func TestGetUserPreservedDirectories(t *testing.T) {
 	dirs := GetUserPreservedDirectories()
 
-	expectedDirs := []string{ArchivesDir, IssuesDir, PlanDir, ProductDir, ResearchDir, SummaryDir}
+	expectedDirs := []string{ArchivesDir, IssuesDir, PlanDir, ProductDir, ResearchDir, SummaryDir, ValidationDir}
 
 	if len(dirs) != len(expectedDirs) {
 		t.Errorf("Expected %d directories, got %d", len(expectedDirs), len(dirs))

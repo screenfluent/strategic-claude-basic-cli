@@ -277,6 +277,7 @@ func TestAnalyzeFileOperations(t *testing.T) {
 				filepath.Join(config.StrategicClaudeBasicDir, config.ProductDir),
 				filepath.Join(config.StrategicClaudeBasicDir, config.ResearchDir),
 				filepath.Join(config.StrategicClaudeBasicDir, config.SummaryDir),
+				filepath.Join(config.StrategicClaudeBasicDir, config.ValidationDir),
 			},
 		},
 	}
