@@ -8,7 +8,7 @@ import (
 const (
 	// Repository configuration
 	DefaultRepoURL = "https://github.com/Fomo-Driven-Development/strategic-claude-basic-template.git"
-	FixedCommit    = "bb0d47c8c72cbcbffa2e3d7e035bf273fb0a186b" // Pinned commit hash, updated with releases
+	FixedCommit    = "2518a9c0e8eb3c0d1c5bd0d11dff7ccfcd6a4ba9" // Pinned commit hash, updated with releases
 	Branch         = "main"
 
 	// Directory configuration
@@ -51,7 +51,7 @@ const (
 	ReplacedDirs = "core/,guides/,templates/"
 
 	// User directories preserved during updates
-	UserPreservedDirs = "archives/,issues/,plan/,product/,research/,summary/"
+	UserPreservedDirs = "archives/,issues/,plan/,product/,research/,summary/,validation/"
 
 	// Default timeout values
 	DefaultGitTimeout     = 30 * time.Second
