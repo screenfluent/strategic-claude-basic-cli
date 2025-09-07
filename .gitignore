@@ -58,7 +58,6 @@ tmp/
 logs/
 
 # Build artifacts
-strategic-claude-basic-cli
 strategic-claude-basic-cli.exe
 
 # Development environment
