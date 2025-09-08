@@ -31,7 +31,7 @@ var Registry = map[string]Template{
 		Description: "Specialized template for CCR (Claude Code Router) workflows and development patterns",
 		RepoURL:     DefaultRepoURL,
 		Branch:      "ccr-template",
-		Commit:      "d991f75719e96b307c79e72d9a16566711e5c6ca", // Pinned commit for ccr-template branch
+		Commit:      "d09862670eea5781d2e652963e1bb820d9f57bd8", // Pinned commit for ccr-template branch
 		Language:    "",
 		Tags:        []string{"ccr", "workflow", "specialized"},
 	},
