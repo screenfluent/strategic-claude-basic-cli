@@ -9,7 +9,7 @@ const (
 	// Repository configuration (deprecated - use templates package instead)
 	// Kept for backward compatibility during migration
 	DefaultRepoURL = "https://github.com/Fomo-Driven-Development/strategic-claude-basic-template.git"
-	FixedCommit    = "ad5f010fef852581894d207b439268d1d903f9fb" // Pinned commit hash, updated with releases
+	FixedCommit    = "4efe6386d0a949e3e2ddc1b0902ea937986da62f" // Pinned commit hash, updated with releases
 	Branch         = "main"
 
 	// Directory configuration

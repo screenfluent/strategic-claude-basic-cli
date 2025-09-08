@@ -58,8 +58,20 @@ type TemplateSelectorModel struct {
 
 // NewTemplateSelectorModel creates a new template selector model
 func NewTemplateSelectorModel() TemplateSelectorModel {
+	templateList := templates.ListActiveTemplates()
+
+	// Set cursor to main template by default
+	cursor := 0
+	for i, template := range templateList {
+		if template.ID == "main" {
+			cursor = i
+			break
+		}
+	}
+
 	return TemplateSelectorModel{
-		templates: templates.ListActiveTemplates(),
+		templates: templateList,
+		cursor:    cursor,
 	}
 }
 
