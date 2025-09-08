@@ -8,7 +8,7 @@ import (
 const (
 	// Repository configuration
 	DefaultRepoURL = "https://github.com/Fomo-Driven-Development/strategic-claude-basic-template.git"
-	FixedCommit    = "2518a9c0e8eb3c0d1c5bd0d11dff7ccfcd6a4ba9" // Pinned commit hash, updated with releases
+	FixedCommit    = "23bcdc7088bff19c6e51660337ed00ccd3f28098" // Pinned commit hash, updated with releases
 	Branch         = "main"
 
 	// Directory configuration
@@ -31,6 +31,7 @@ const (
 	ProductDir    = "product"
 	ResearchDir   = "research"
 	SummaryDir    = "summary"
+	ToolsDir      = "tools"
 	ValidationDir = "validation"
 
 	// Core subdirectories
@@ -51,7 +52,7 @@ const (
 	ReplacedDirs = "core/,guides/,templates/"
 
 	// User directories preserved during updates
-	UserPreservedDirs = "archives/,issues/,plan/,product/,research/,summary/,validation/"
+	UserPreservedDirs = "archives/,issues/,plan/,product/,research/,summary/,tools/,validation/"
 
 	// Default timeout values
 	DefaultGitTimeout     = 30 * time.Second
@@ -114,6 +115,7 @@ func GetUserPreservedDirectories() []string {
 		ProductDir,
 		ResearchDir,
 		SummaryDir,
+		ToolsDir,
 		ValidationDir,
 	}
 }

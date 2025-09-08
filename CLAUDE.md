@@ -66,7 +66,7 @@ The codebase follows a layered architecture:
 Critical constants for framework behavior:
 - **Repository**: `Fomo-Driven-Development/strategic-claude-basic-template.git` at fixed commit
 - **Directories Replaced**: core/, guides/, templates/ (framework content)
-- **Directories Preserved**: archives/, issues/, plan/, product/, research/, summary/, validation/ (user content)
+- **Directories Preserved**: archives/, issues/, plan/, product/, research/, summary/, tools/, validation/ (user content)
 - **Symlinks Created**:
   - `.claude/agents/strategic` → `../../.strategic-claude-basic/core/agents`
   - `.claude/commands/strategic` → `../../.strategic-claude-basic/core/commands`
@@ -80,7 +80,7 @@ Critical constants for framework behavior:
 
 #### Installation Types
 1. **New Installation**: Full `.strategic-claude-basic/` directory copy
-2. **Core Update** (`--force-core`): Replace only core/, guides/, templates/ (preserve user content in archives/, issues/, plan/, product/, research/, summary/, validation/)
+2. **Core Update** (`--force-core`): Replace only core/, guides/, templates/ (preserve user content in archives/, issues/, plan/, product/, research/, summary/, tools/, validation/)
 3. **Full Overwrite** (`--force`): Replace entire directory
 
 #### Directory Structure
@@ -99,6 +99,7 @@ target-project/
 │   ├── product/                     # User content (preserved)
 │   ├── research/                    # User content (preserved)
 │   ├── summary/                     # User content (preserved)
+│   ├── tools/                       # User content (preserved)
 │   └── validation/                  # User content (preserved)
 └── .claude/                         # Claude Code integration
     ├── agents/
