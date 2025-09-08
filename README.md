@@ -4,7 +4,7 @@
 [![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/dgnsrekt/strategic-claude-basic-cli/releases)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-A command-line tool that simplifies the integration of the [Strategic Claude Basic framework](https://github.com/Fomo-Driven-Development/strategic-claude-basic-template) into your development projects.
+A command-line tool that simplifies the integration of the [Strategic Claude Basic framework](https://github.com/Fomo-Driven-Development/strategic-claude-base) into your development projects.
 
 ## Overview
 

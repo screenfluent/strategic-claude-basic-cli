@@ -8,13 +8,13 @@ import (
 const (
 	// Repository configuration (deprecated - use templates package instead)
 	// Kept for backward compatibility during migration
-	DefaultRepoURL = "https://github.com/Fomo-Driven-Development/strategic-claude-basic-template.git"
+	DefaultRepoURL = "git@github.com:Fomo-Driven-Development/strategic-claude-base.git"
 	FixedCommit    = "4efe6386d0a949e3e2ddc1b0902ea937986da62f" // Pinned commit hash, updated with releases
 	Branch         = "main"
 
 	// Directory configuration
 	DefaultTargetDir        = "."
-	TempDirPrefix           = "strategic-claude-basic-template-"
+	TempDirPrefix           = "strategic-claude-base-"
 	StrategicClaudeBasicDir = ".strategic-claude-basic"
 	ClaudeDir               = ".claude"
 	BackupDirPrefix         = "strategic-claude-basic-backup-"

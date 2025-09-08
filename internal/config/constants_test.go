@@ -373,8 +373,8 @@ func TestConstants_Values(t *testing.T) {
 	}
 
 	// Test specific value formats
-	if !strings.HasPrefix(DefaultRepoURL, "https://") {
-		t.Errorf("Expected DefaultRepoURL to be HTTPS, got %s", DefaultRepoURL)
+	if !strings.HasPrefix(DefaultRepoURL, "git@") {
+		t.Errorf("Expected DefaultRepoURL to be SSH, got %s", DefaultRepoURL)
 	}
 
 	if !strings.HasSuffix(DefaultRepoURL, ".git") {

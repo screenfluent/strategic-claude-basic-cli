@@ -313,7 +313,7 @@ func (e *CliError) Error() string {
 ```go
 const (
     // Repository information
-    DefaultRepoURL = "https://github.com/Fomo-Driven-Development/strategic-claude-basic-template.git"
+    DefaultRepoURL = "git@github.com:Fomo-Driven-Development/strategic-claude-base.git"
     FixedCommit    = "db7a4c0"  // Pinned commit hash, updated with releases
     Branch         = "main"
 

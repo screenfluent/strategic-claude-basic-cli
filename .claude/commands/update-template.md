@@ -33,7 +33,7 @@ You are tasked with updating this CLI project's template configurations. The sys
    - Ask user to select which template to update
 
 ### Phase 2: Research Selected Template (Read-only)
-1. Clone the selected template's branch to `/tmp/strategic-claude-basic-template-update`
+1. Clone the selected template's branch to `/tmp/strategic-claude-base-update`
 2. Get the latest commit hash from the template's specific branch
 3. Compare with current commit in `internal/templates/registry.go`
 4. Check for any structural changes in the selected template

@@ -253,7 +253,7 @@ Each phase must meet these criteria before proceeding:
 ### Future Enhancements (Post v1.0)
 - Configuration file support
 - Selective directory customization (beyond core/guides/templates framework directories)
-- Update command for strategic-claude-basic-template content
+- Update command for strategic-claude-base content
 - Multiple framework support
 - Integration with package managers
 - Web-based status dashboard

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Strategic Claude Basic CLI is a Go-based command-line tool that automates the setup and management of Strategic Claude Basic framework integration. It clones the strategic-claude-basic-template repository, copies contents to `.strategic-claude-basic/`, and creates symlinks in `.claude/` subdirectories for Claude Code integration.
+Strategic Claude Basic CLI is a Go-based command-line tool that automates the setup and management of Strategic Claude Basic framework integration. It clones the strategic-claude-base repository, copies contents to `.strategic-claude-basic/`, and creates symlinks in `.claude/` subdirectories for Claude Code integration.
 
 ## Common Commands
 
@@ -64,7 +64,7 @@ The codebase follows a layered architecture:
 
 #### Configuration (internal/config/constants.go)
 Critical constants for framework behavior:
-- **Repository**: `Fomo-Driven-Development/strategic-claude-basic-template.git` at fixed commit
+- **Repository**: `Fomo-Driven-Development/strategic-claude-base.git` at fixed commit
 - **Directories Replaced**: core/, guides/, templates/ (framework content)
 - **Directories Preserved**: archives/, issues/, plan/, product/, research/, summary/, tools/, validation/ (user content)
 - **Symlinks Created**:
