@@ -21,7 +21,7 @@ var Registry = map[string]Template{
 		Description: "Main template for general development projects with comprehensive Claude Code integration",
 		RepoURL:     DefaultRepoURL,
 		Branch:      "main",
-		Commit:      "23bcdc7088bff19c6e51660337ed00ccd3f28098", // Current pinned commit
+		Commit:      "ad5f010fef852581894d207b439268d1d903f9fb", // Current pinned commit
 		Language:    "",                                         // Language-agnostic
 		Tags:        []string{"general", "default"},
 	},

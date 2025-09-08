@@ -11,6 +11,7 @@ import (
 	"strategic-claude-basic-cli/internal/models"
 	"strategic-claude-basic-cli/internal/services/filesystem"
 	"strategic-claude-basic-cli/internal/services/git"
+	"strategic-claude-basic-cli/internal/services/script"
 	"strategic-claude-basic-cli/internal/services/settings"
 	"strategic-claude-basic-cli/internal/services/status"
 	"strategic-claude-basic-cli/internal/services/symlink"
@@ -24,6 +25,7 @@ type Service struct {
 	statusService     *status.Service
 	symlinkService    *symlink.Service
 	settingsService   *settings.Service
+	scriptService     *script.Service
 }
 
 // New creates a new installer service instance
@@ -34,6 +36,7 @@ func New() *Service {
 		statusService:     status.NewService(),
 		symlinkService:    symlink.New(),
 		settingsService:   settings.New(),
+		scriptService:     script.New(),
 	}
 }
 
@@ -88,6 +91,9 @@ func (s *Service) AnalyzeInstallation(installConfig models.InstallConfig) (*mode
 	// Set up symlink operations
 	s.analyzeSymlinkOperations(plan, currentStatus)
 
+	// Check for installation scripts
+	s.analyzeScriptOperations(plan)
+
 	return plan, nil
 }
 
@@ -132,6 +138,17 @@ func (s *Service) Install(installConfig models.InstallConfig) error {
 		}
 	}()
 
+	// Update plan with actual script detection
+	plan.HasPreInstallScript = s.scriptService.ScriptExists(tempDir, config.PreInstallScript)
+	plan.HasPostInstallScript = s.scriptService.ScriptExists(tempDir, config.PostInstallScript)
+
+	// Execute pre-install script if it exists
+	if plan.HasPreInstallScript {
+		if err := s.executePreInstallScript(tempDir, plan.TargetDir); err != nil {
+			return fmt.Errorf("pre-install script failed: %w", err)
+		}
+	}
+
 	// Perform the installation based on type
 	switch plan.InstallationType {
 	case models.InstallationTypeNew:
@@ -165,6 +182,13 @@ func (s *Service) Install(installConfig models.InstallConfig) error {
 	// Process settings.json (merge template with existing user settings)
 	if err := s.settingsService.ProcessSettings(plan.TargetDir); err != nil {
 		return fmt.Errorf("failed to process settings: %w", err)
+	}
+
+	// Execute post-install script if it exists
+	if plan.HasPostInstallScript {
+		if err := s.executePostInstallScript(tempDir, plan.TargetDir); err != nil {
+			return fmt.Errorf("post-install script failed: %w", err)
+		}
 	}
 
 	// Save template metadata
@@ -416,6 +440,56 @@ func (s *Service) saveTemplateInfo(targetDir string, template templates.Template
 			fmt.Sprintf("Failed to write template info to %s", templateInfoPath),
 			err,
 		)
+	}
+
+	return nil
+}
+
+// analyzeScriptOperations checks if installation scripts exist in the template
+func (s *Service) analyzeScriptOperations(plan *models.InstallationPlan) {
+	// This will be set after the repository is cloned, but we can initialize it here
+	// The actual check will happen in the Install method once we have the temporary directory
+	plan.HasPreInstallScript = false
+	plan.HasPostInstallScript = false
+}
+
+// executePreInstallScript copies and executes the pre-install script
+func (s *Service) executePreInstallScript(sourceDir, targetDir string) error {
+	// Copy script to target directory
+	if err := s.scriptService.CopyScript(sourceDir, targetDir, config.PreInstallScript); err != nil {
+		return fmt.Errorf("failed to copy pre-install script: %w", err)
+	}
+
+	// Execute the script
+	if err := s.scriptService.ExecuteScript(targetDir, config.PreInstallScript); err != nil {
+		return fmt.Errorf("failed to execute pre-install script: %w", err)
+	}
+
+	// Clean up script after execution
+	if err := s.scriptService.RemoveScript(targetDir, config.PreInstallScript); err != nil {
+		// Log warning but don't fail installation
+		fmt.Printf("Warning: Failed to remove pre-install script: %v\n", err)
+	}
+
+	return nil
+}
+
+// executePostInstallScript copies and executes the post-install script
+func (s *Service) executePostInstallScript(sourceDir, targetDir string) error {
+	// Copy script to target directory
+	if err := s.scriptService.CopyScript(sourceDir, targetDir, config.PostInstallScript); err != nil {
+		return fmt.Errorf("failed to copy post-install script: %w", err)
+	}
+
+	// Execute the script
+	if err := s.scriptService.ExecuteScript(targetDir, config.PostInstallScript); err != nil {
+		return fmt.Errorf("failed to execute post-install script: %w", err)
+	}
+
+	// Clean up script after execution
+	if err := s.scriptService.RemoveScript(targetDir, config.PostInstallScript); err != nil {
+		// Log warning but don't fail installation
+		fmt.Printf("Warning: Failed to remove post-install script: %v\n", err)
 	}
 
 	return nil

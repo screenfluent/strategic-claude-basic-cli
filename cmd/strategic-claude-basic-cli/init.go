@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
 
 	"strategic-claude-basic-cli/internal/models"
 	"strategic-claude-basic-cli/internal/services/git"
 	"strategic-claude-basic-cli/internal/services/installer"
 	"strategic-claude-basic-cli/internal/templates"
+	"strategic-claude-basic-cli/internal/ui"
 	"strategic-claude-basic-cli/internal/utils"
 
 	"github.com/spf13/cobra"
@@ -213,49 +212,9 @@ func selectTemplate(templateFlag string, skipPrompt bool) (string, error) {
 	return selectTemplateInteractively()
 }
 
-// selectTemplateInteractively presents template options to the user for selection
+// selectTemplateInteractively presents template options to the user for selection using Bubble Tea
 func selectTemplateInteractively() (string, error) {
-	availableTemplates := templates.ListActiveTemplates()
-	if len(availableTemplates) == 0 {
-		return "", fmt.Errorf("no templates available")
-	}
-
-	// If only one template, use it automatically
-	if len(availableTemplates) == 1 {
-		template := availableTemplates[0]
-		fmt.Printf("Using template: %s (%s)\n", template.DisplayName(), template.ID)
-		return template.ID, nil
-	}
-
-	// Display template options
-	fmt.Println()
-	fmt.Println("Available templates:")
-	for i, template := range availableTemplates {
-		fmt.Printf("  %d. %s (%s)\n", i+1, template.DisplayName(), template.ID)
-		if template.Description != "" {
-			fmt.Printf("     %s\n", template.Description)
-		}
-	}
-	fmt.Println()
-
-	// Get user selection
-	interactionService := utils.NewInteractionService()
-	for {
-		input, err := interactionService.PromptWithDefault(fmt.Sprintf("Select template (1-%d)", len(availableTemplates)), "")
-		if err != nil {
-			return "", fmt.Errorf("failed to get user input: %w", err)
-		}
-
-		choice, err := strconv.Atoi(strings.TrimSpace(input))
-		if err != nil || choice < 1 || choice > len(availableTemplates) {
-			fmt.Printf("Invalid selection. Please enter a number between 1 and %d.\n", len(availableTemplates))
-			continue
-		}
-
-		selectedTemplate := availableTemplates[choice-1]
-		fmt.Printf("Selected: %s (%s)\n", selectedTemplate.DisplayName(), selectedTemplate.ID)
-		return selectedTemplate.ID, nil
-	}
+	return ui.SelectTemplate()
 }
 
 // getInstallationConfirmation displays the installation plan and asks for user confirmation
@@ -317,6 +276,19 @@ func getInstallationConfirmation(plan *models.InstallationPlan) (bool, error) {
 		for _, warning := range plan.Warnings {
 			fmt.Printf("  - %s\n", warning)
 		}
+		fmt.Println()
+	}
+
+	// Display script execution information
+	if plan.HasPreInstallScript || plan.HasPostInstallScript {
+		fmt.Println("Scripts to be executed:")
+		if plan.HasPreInstallScript {
+			fmt.Printf("  📜 %s (before installation)\n", "pre-install.sh")
+		}
+		if plan.HasPostInstallScript {
+			fmt.Printf("  📜 %s (after installation)\n", "post-install.sh")
+		}
+		fmt.Println("⚠️  WARNING: These scripts will be executed with your user permissions.")
 		fmt.Println()
 	}
 
@@ -385,6 +357,18 @@ func displayDryRun(plan *models.InstallationPlan) error {
 
 	if plan.BackupRequired {
 		fmt.Printf("Would create backup at: %s\n", plan.BackupDir)
+		fmt.Println()
+	}
+
+	// Display script execution information
+	if plan.HasPreInstallScript || plan.HasPostInstallScript {
+		fmt.Println("Would execute scripts:")
+		if plan.HasPreInstallScript {
+			fmt.Printf("  📜 %s (before installation)\n", "pre-install.sh")
+		}
+		if plan.HasPostInstallScript {
+			fmt.Printf("  📜 %s (after installation)\n", "post-install.sh")
+		}
 		fmt.Println()
 	}
 

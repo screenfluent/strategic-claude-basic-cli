@@ -9,7 +9,7 @@ const (
 	// Repository configuration (deprecated - use templates package instead)
 	// Kept for backward compatibility during migration
 	DefaultRepoURL = "https://github.com/Fomo-Driven-Development/strategic-claude-basic-template.git"
-	FixedCommit    = "23bcdc7088bff19c6e51660337ed00ccd3f28098" // Pinned commit hash, updated with releases
+	FixedCommit    = "ad5f010fef852581894d207b439268d1d903f9fb" // Pinned commit hash, updated with releases
 	Branch         = "main"
 
 	// Directory configuration
@@ -71,6 +71,10 @@ const (
 
 	// Template metadata file
 	TemplateInfoFile = ".template-info"
+
+	// Installation scripts
+	PreInstallScript  = "pre-install.sh"
+	PostInstallScript = "post-install.sh"
 
 	// Exit codes
 	ExitSuccess           = 0

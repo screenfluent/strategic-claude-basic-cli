@@ -25,6 +25,10 @@ type StatusInfo struct {
 	// Template information
 	InstalledTemplate *templates.TemplateInfo `json:"installed_template,omitempty"`
 
+	// Script detection
+	HasPreInstallScript  bool `json:"has_pre_install_script"`
+	HasPostInstallScript bool `json:"has_post_install_script"`
+
 	// Detailed component status
 	Symlinks []SymlinkStatus `json:"symlinks"`
 	Issues   []string        `json:"issues"`
@@ -58,6 +62,10 @@ type InstallationPlan struct {
 
 	// Template information
 	Template templates.Template `json:"template"`
+
+	// Script information
+	HasPreInstallScript  bool `json:"has_pre_install_script"`
+	HasPostInstallScript bool `json:"has_post_install_script"`
 
 	// File operations
 	ExistingFiles []string `json:"existing_files"` // Files that already exist
