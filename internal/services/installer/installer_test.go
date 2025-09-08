@@ -7,6 +7,7 @@ import (
 
 	"strategic-claude-basic-cli/internal/config"
 	"strategic-claude-basic-cli/internal/models"
+	"strategic-claude-basic-cli/internal/templates"
 )
 
 func TestNew(t *testing.T) {
@@ -54,6 +55,7 @@ func TestAnalyzeInstallation(t *testing.T) {
 			name: "new installation in empty directory",
 			installConfig: models.InstallConfig{
 				TargetDir:   tempDir,
+				TemplateID:  "main",
 				Force:       false,
 				ForceCore:   false,
 				SkipConfirm: true,
@@ -67,6 +69,7 @@ func TestAnalyzeInstallation(t *testing.T) {
 			name: "force installation",
 			installConfig: models.InstallConfig{
 				TargetDir:   tempDir,
+				TemplateID:  "main",
 				Force:       true,
 				ForceCore:   false,
 				SkipConfirm: true,
@@ -84,6 +87,7 @@ func TestAnalyzeInstallation(t *testing.T) {
 			name: "force-core installation",
 			installConfig: models.InstallConfig{
 				TargetDir:   tempDir,
+				TemplateID:  "main",
 				Force:       false,
 				ForceCore:   true,
 				SkipConfirm: true,
@@ -297,7 +301,15 @@ func TestAnalyzeFileOperations(t *testing.T) {
 				}
 			}
 
-			plan := models.NewInstallationPlan(tempDir, tt.installType)
+			// Use a default template for testing
+			defaultTemplate := templates.Template{
+				ID:      "main",
+				Name:    "Test Template",
+				RepoURL: "https://test.com/repo.git",
+				Branch:  "main",
+				Commit:  "test123",
+			}
+			plan := models.NewInstallationPlan(tempDir, tt.installType, defaultTemplate)
 			status := &models.StatusInfo{TargetDir: tempDir}
 
 			service.analyzeFileOperations(plan, status)

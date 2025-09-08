@@ -196,6 +196,7 @@ func runInitTest(targetDir string, force, forceCore, dryRun bool) error {
 	// Create install configuration - always skip confirmation for tests
 	installConfig := models.InstallConfig{
 		TargetDir:   targetDir,
+		TemplateID:  "main", // Use main template for tests
 		Force:       force,
 		ForceCore:   forceCore,
 		SkipConfirm: true,  // Always skip confirmation in tests

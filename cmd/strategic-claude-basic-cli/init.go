@@ -2,22 +2,27 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"strategic-claude-basic-cli/internal/models"
 	"strategic-claude-basic-cli/internal/services/git"
 	"strategic-claude-basic-cli/internal/services/installer"
+	"strategic-claude-basic-cli/internal/templates"
 	"strategic-claude-basic-cli/internal/utils"
 
 	"github.com/spf13/cobra"
 )
 
 var (
-	force     bool
-	forceCore bool
-	yes       bool
-	noBackup  bool
-	dryRun    bool
+	force      bool
+	forceCore  bool
+	yes        bool
+	noBackup   bool
+	dryRun     bool
+	templateID string
 )
 
 var initCmd = &cobra.Command{
@@ -37,11 +42,17 @@ Installation modes:
 - Update core only (--force-core): Update only core framework files, preserve user content
 - Full overwrite (--force): Replace all framework files
 
+Template selection:
+- Use --template to specify a template ID directly
+- Without --template, you'll be prompted to choose interactively
+
 Examples:
-  strategic-claude-basic-cli init                    # Install in current directory
-  strategic-claude-basic-cli init ./my-project      # Install in specific directory
-  strategic-claude-basic-cli init --force-core      # Update core files only
-  strategic-claude-basic-cli init --dry-run         # Preview what would be done`,
+  strategic-claude-basic-cli init                      # Install with template selection
+  strategic-claude-basic-cli init --template=main     # Install main template
+  strategic-claude-basic-cli init --template=ccr      # Install CCR template
+  strategic-claude-basic-cli init ./my-project        # Install in specific directory
+  strategic-claude-basic-cli init --force-core        # Update core files only
+  strategic-claude-basic-cli init --dry-run           # Preview what would be done`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runInit(args)
@@ -56,6 +67,7 @@ func init() {
 	initCmd.Flags().BoolVarP(&yes, "yes", "y", false, "automatically answer yes to all prompts")
 	initCmd.Flags().BoolVar(&noBackup, "no-backup", false, "skip creating backups of existing files")
 	initCmd.Flags().BoolVar(&dryRun, "dry-run", false, "show what would be done without making changes")
+	initCmd.Flags().StringVar(&templateID, "template", "", "template ID to install (main, ccr, etc.)")
 
 	// Custom completion for directory argument
 	initCmd.ValidArgsFunction = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -63,6 +75,15 @@ func init() {
 			return []string{}, cobra.ShellCompDirectiveFilterDirs
 		}
 		return []string{}, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	// Add completion for template flag
+	if err := initCmd.RegisterFlagCompletionFunc("template", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		templateIDs := templates.GetTemplateIDs()
+		return templateIDs, cobra.ShellCompDirectiveNoFileComp
+	}); err != nil {
+		// This should not happen in normal operation, but we handle it for completeness
+		fmt.Fprintf(os.Stderr, "Warning: failed to register completion for --template flag: %v\n", err)
 	}
 }
 
@@ -82,8 +103,17 @@ func runInit(args []string) error {
 	}
 
 	utils.VerbosePrintf(verbose, "Target directory: %s\n", absTarget)
-	utils.VerbosePrintf(verbose, "Flags - Force: %v, Force Core: %v, Yes: %v, No Backup: %v, Dry Run: %v\n",
-		force, forceCore, yes, noBackup, dryRun)
+	utils.VerbosePrintf(verbose, "Flags - Force: %v, Force Core: %v, Yes: %v, No Backup: %v, Dry Run: %v, Template: %s\n",
+		force, forceCore, yes, noBackup, dryRun, templateID)
+
+	// Handle template selection
+	selectedTemplateID, err := selectTemplate(templateID, yes)
+	if err != nil {
+		utils.DisplayError(err)
+		return err
+	}
+
+	utils.VerbosePrintf(verbose, "Selected template: %s\n", selectedTemplateID)
 
 	// Validate prerequisites
 	if err := validatePrerequisites(); err != nil {
@@ -94,6 +124,7 @@ func runInit(args []string) error {
 	// Create install configuration
 	installConfig := models.InstallConfig{
 		TargetDir:   absTarget,
+		TemplateID:  selectedTemplateID,
 		Force:       force,
 		ForceCore:   forceCore,
 		SkipConfirm: yes,
@@ -163,11 +194,84 @@ func validatePrerequisites() error {
 	return nil
 }
 
+// selectTemplate handles template selection based on flags and user input
+func selectTemplate(templateFlag string, skipPrompt bool) (string, error) {
+	// If template is specified via flag, validate and use it
+	if templateFlag != "" {
+		if err := templates.ValidateTemplateID(templateFlag); err != nil {
+			return "", fmt.Errorf("invalid template ID '%s': %w", templateFlag, err)
+		}
+		return templateFlag, nil
+	}
+
+	// If skipping prompts, use default template
+	if skipPrompt {
+		return templates.DefaultTemplateID, nil
+	}
+
+	// Interactive template selection
+	return selectTemplateInteractively()
+}
+
+// selectTemplateInteractively presents template options to the user for selection
+func selectTemplateInteractively() (string, error) {
+	availableTemplates := templates.ListActiveTemplates()
+	if len(availableTemplates) == 0 {
+		return "", fmt.Errorf("no templates available")
+	}
+
+	// If only one template, use it automatically
+	if len(availableTemplates) == 1 {
+		template := availableTemplates[0]
+		fmt.Printf("Using template: %s (%s)\n", template.DisplayName(), template.ID)
+		return template.ID, nil
+	}
+
+	// Display template options
+	fmt.Println()
+	fmt.Println("Available templates:")
+	for i, template := range availableTemplates {
+		fmt.Printf("  %d. %s (%s)\n", i+1, template.DisplayName(), template.ID)
+		if template.Description != "" {
+			fmt.Printf("     %s\n", template.Description)
+		}
+	}
+	fmt.Println()
+
+	// Get user selection
+	interactionService := utils.NewInteractionService()
+	for {
+		input, err := interactionService.PromptWithDefault(fmt.Sprintf("Select template (1-%d)", len(availableTemplates)), "")
+		if err != nil {
+			return "", fmt.Errorf("failed to get user input: %w", err)
+		}
+
+		choice, err := strconv.Atoi(strings.TrimSpace(input))
+		if err != nil || choice < 1 || choice > len(availableTemplates) {
+			fmt.Printf("Invalid selection. Please enter a number between 1 and %d.\n", len(availableTemplates))
+			continue
+		}
+
+		selectedTemplate := availableTemplates[choice-1]
+		fmt.Printf("Selected: %s (%s)\n", selectedTemplate.DisplayName(), selectedTemplate.ID)
+		return selectedTemplate.ID, nil
+	}
+}
+
 // getInstallationConfirmation displays the installation plan and asks for user confirmation
 func getInstallationConfirmation(plan *models.InstallationPlan) (bool, error) {
 	fmt.Println() // Empty line for readability
 	fmt.Printf("Target directory: %s\n", plan.TargetDir)
 	fmt.Printf("Installation type: %s\n", plan.InstallationType)
+
+	// Display template information
+	template := plan.Template
+	fmt.Printf("Template: %s (%s)\n", template.DisplayName(), template.ID)
+	if template.Description != "" {
+		fmt.Printf("Description: %s\n", template.Description)
+	}
+	fmt.Printf("Branch: %s\n", template.Branch)
+	fmt.Printf("Commit: %s\n", template.Commit)
 	fmt.Println()
 
 	// Display what will happen

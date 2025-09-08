@@ -1,9 +1,11 @@
 package installer
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"strategic-claude-basic-cli/internal/config"
 	"strategic-claude-basic-cli/internal/models"
@@ -12,6 +14,7 @@ import (
 	"strategic-claude-basic-cli/internal/services/settings"
 	"strategic-claude-basic-cli/internal/services/status"
 	"strategic-claude-basic-cli/internal/services/symlink"
+	"strategic-claude-basic-cli/internal/templates"
 )
 
 // Service provides installation functionality for the Strategic Claude Basic framework
@@ -60,9 +63,15 @@ func (s *Service) AnalyzeInstallation(installConfig models.InstallConfig) (*mode
 		return nil, fmt.Errorf("failed to check installation status: %w", err)
 	}
 
+	// Get template configuration
+	template, err := installConfig.GetTemplate()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get template configuration: %w", err)
+	}
+
 	// Determine installation type
 	installType := s.determineInstallationType(currentStatus, installConfig)
-	plan := models.NewInstallationPlan(absTarget, installType)
+	plan := models.NewInstallationPlan(absTarget, installType, template)
 
 	// Analyze what will be done based on installation type
 	s.analyzeFileOperations(plan, currentStatus)
@@ -106,8 +115,14 @@ func (s *Service) Install(installConfig models.InstallConfig) error {
 		}
 	}
 
-	// Clone repository to temporary location
-	tempDir, err := s.gitService.CloneRepository(config.DefaultRepoURL, config.FixedCommit)
+	// Get template configuration for cloning
+	template, err := installConfig.GetTemplate()
+	if err != nil {
+		return fmt.Errorf("failed to get template configuration: %w", err)
+	}
+
+	// Clone repository to temporary location using template configuration
+	tempDir, err := s.gitService.CloneRepositoryWithBranch(template.RepoURL, template.Branch, template.Commit)
 	if err != nil {
 		return fmt.Errorf("failed to clone repository: %w", err)
 	}
@@ -150,6 +165,11 @@ func (s *Service) Install(installConfig models.InstallConfig) error {
 	// Process settings.json (merge template with existing user settings)
 	if err := s.settingsService.ProcessSettings(plan.TargetDir); err != nil {
 		return fmt.Errorf("failed to process settings: %w", err)
+	}
+
+	// Save template metadata
+	if err := s.saveTemplateInfo(plan.TargetDir, template); err != nil {
+		return fmt.Errorf("failed to save template metadata: %w", err)
 	}
 
 	// Validate installation
@@ -357,6 +377,45 @@ func (s *Service) ensureClaudeDirectory(targetDir string) error {
 		if err := s.filesystemService.CreateDirectory(subdirPath); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+// saveTemplateInfo saves template metadata to the installation directory
+func (s *Service) saveTemplateInfo(targetDir string, template templates.Template) error {
+	strategicDir := filepath.Join(targetDir, config.StrategicClaudeBasicDir)
+	templateInfoPath := filepath.Join(strategicDir, config.TemplateInfoFile)
+
+	// Create template info
+	templateInfo := templates.TemplateInfo{
+		Template:        template,
+		InstalledAt:     time.Now().Format(time.RFC3339),
+		InstalledCommit: template.Commit,
+		Metadata:        make(map[string]string),
+	}
+
+	// Add additional metadata
+	templateInfo.Metadata["cli_version"] = "0.1.0" // TODO: Get from build info
+	templateInfo.Metadata["installation_type"] = "cli"
+
+	// Marshal to JSON
+	data, err := json.MarshalIndent(templateInfo, "", "  ")
+	if err != nil {
+		return models.NewAppError(
+			models.ErrorCodeFileSystemError,
+			"Failed to marshal template info",
+			err,
+		)
+	}
+
+	// Write to file
+	if err := os.WriteFile(templateInfoPath, data, config.FilePermissions); err != nil {
+		return models.NewAppError(
+			models.ErrorCodeFileSystemError,
+			fmt.Sprintf("Failed to write template info to %s", templateInfoPath),
+			err,
+		)
 	}
 
 	return nil

@@ -86,6 +86,26 @@ func displayStatus(statusInfo *models.StatusInfo, statusService *status.Service,
 		fmt.Printf("  ❌ Claude Integration: %s (not found)\n", statusInfo.ClaudeDirPath)
 	}
 
+	// Display template information
+	if statusInfo.InstalledTemplate != nil {
+		fmt.Printf("\nTemplate Information:\n")
+		template := statusInfo.InstalledTemplate.Template
+		fmt.Printf("  Name: %s\n", template.DisplayName())
+		fmt.Printf("  ID: %s\n", template.ID)
+		fmt.Printf("  Description: %s\n", template.Description)
+		fmt.Printf("  Branch: %s\n", template.Branch)
+		fmt.Printf("  Commit: %s\n", template.Commit)
+		if statusInfo.InstalledTemplate.InstalledAt != "" {
+			fmt.Printf("  Installed At: %s\n", statusInfo.InstalledTemplate.InstalledAt)
+		}
+		if template.Language != "" {
+			fmt.Printf("  Language: %s\n", template.Language)
+		}
+		if len(template.Tags) > 0 {
+			fmt.Printf("  Tags: %v\n", template.Tags)
+		}
+	}
+
 	// Display symlink information
 	if len(statusInfo.Symlinks) > 0 {
 		fmt.Printf("\nSymlinks:\n")

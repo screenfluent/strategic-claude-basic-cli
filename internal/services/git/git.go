@@ -38,6 +38,11 @@ func (s *Service) ValidateGitInstalled() error {
 
 // CloneRepository clones a git repository to a temporary directory and checks out a specific commit
 func (s *Service) CloneRepository(url, commit string) (string, error) {
+	return s.CloneRepositoryWithBranch(url, "", commit)
+}
+
+// CloneRepositoryWithBranch clones a git repository with optional branch specification and checks out a specific commit
+func (s *Service) CloneRepositoryWithBranch(url, branch, commit string) (string, error) {
 	if err := s.ValidateGitInstalled(); err != nil {
 		return "", err
 	}
@@ -54,7 +59,7 @@ func (s *Service) CloneRepository(url, commit string) (string, error) {
 	// Attempt clone with retries for network issues
 	var cloneErr error
 	for attempt := 1; attempt <= 3; attempt++ {
-		cloneErr = s.cloneWithRetry(url, tempDir, attempt)
+		cloneErr = s.cloneWithRetry(url, branch, tempDir, attempt)
 		if cloneErr == nil {
 			break
 		}
@@ -115,17 +120,30 @@ func (s *Service) createTempDir() (string, error) {
 }
 
 // cloneWithRetry performs a git clone operation with error handling
-func (s *Service) cloneWithRetry(url, tempDir string, attempt int) error {
-	cmd := exec.Command("git", "clone", url, tempDir)
+func (s *Service) cloneWithRetry(url, branch, tempDir string, attempt int) error {
+	var cmd *exec.Cmd
+
+	if branch != "" {
+		// Clone specific branch
+		cmd = exec.Command("git", "clone", "-b", branch, url, tempDir)
+	} else {
+		// Clone default branch
+		cmd = exec.Command("git", "clone", url, tempDir)
+	}
+
 	cmd.Stdout = nil // Suppress output
 	cmd.Stderr = nil
 
 	err := cmd.Run()
 	if err != nil {
 		if attempt == 3 { // Last attempt, return detailed error
+			branchInfo := ""
+			if branch != "" {
+				branchInfo = fmt.Sprintf(" (branch: %s)", branch)
+			}
 			return models.NewAppError(
 				models.ErrorCodeGitCloneError,
-				fmt.Sprintf("Failed to clone repository %s after %d attempts", url, attempt),
+				fmt.Sprintf("Failed to clone repository %s%s after %d attempts", url, branchInfo, attempt),
 				err,
 			)
 		}

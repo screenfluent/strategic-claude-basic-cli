@@ -6,7 +6,8 @@ import (
 )
 
 const (
-	// Repository configuration
+	// Repository configuration (deprecated - use templates package instead)
+	// Kept for backward compatibility during migration
 	DefaultRepoURL = "https://github.com/Fomo-Driven-Development/strategic-claude-basic-template.git"
 	FixedCommit    = "23bcdc7088bff19c6e51660337ed00ccd3f28098" // Pinned commit hash, updated with releases
 	Branch         = "main"
@@ -67,6 +68,9 @@ const (
 	AppName        = "strategic-claude-basic-cli"
 	AppDescription = "CLI tool for managing Strategic Claude Basic framework installations"
 	ConfigFileName = "strategic-claude-basic.json"
+
+	// Template metadata file
+	TemplateInfoFile = ".template-info"
 
 	// Exit codes
 	ExitSuccess           = 0

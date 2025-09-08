@@ -1,11 +1,18 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"strategic-claude-basic-cli/internal/templates"
+)
 
 // InstallConfig holds configuration options for installation operations
 type InstallConfig struct {
 	// Target directory for installation
 	TargetDir string
+
+	// Template selection
+	TemplateID string // ID of the template to install
 
 	// Installation behavior flags
 	Force       bool // Force installation, overwriting existing files
@@ -40,6 +47,7 @@ type CleanConfig struct {
 func NewInstallConfig(targetDir string) *InstallConfig {
 	return &InstallConfig{
 		TargetDir:   targetDir,
+		TemplateID:  templates.DefaultTemplateID,
 		Force:       false,
 		ForceCore:   false,
 		SkipConfirm: false,
@@ -83,10 +91,24 @@ func (c *InstallConfig) Validate() error {
 		return NewAppError(ErrorCodeInvalidPath, "target directory cannot be empty", nil)
 	}
 
+	// Validate template ID
+	if c.TemplateID == "" {
+		return NewAppError(ErrorCodeInvalidConfiguration, "template ID cannot be empty", nil)
+	}
+
+	if err := templates.ValidateTemplateID(c.TemplateID); err != nil {
+		return NewAppError(ErrorCodeInvalidConfiguration, "invalid template ID: "+c.TemplateID, err)
+	}
+
 	// Both force and force-core cannot be true at the same time
 	if c.Force && c.ForceCore {
 		return NewAppError(ErrorCodeInvalidConfiguration, "cannot specify both --force and --force-core flags", nil)
 	}
 
 	return nil
+}
+
+// GetTemplate returns the template configuration for this install
+func (c *InstallConfig) GetTemplate() (templates.Template, error) {
+	return templates.GetTemplate(c.TemplateID)
 }

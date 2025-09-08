@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"strategic-claude-basic-cli/internal/templates"
+)
 
 // InstallationType represents the type of installation operation
 type InstallationType string
@@ -18,11 +22,14 @@ type StatusInfo struct {
 	StrategicClaudeDir bool `json:"strategic_claude_dir_exists"`
 	ClaudeDir          bool `json:"claude_dir_exists"`
 
+	// Template information
+	InstalledTemplate *templates.TemplateInfo `json:"installed_template,omitempty"`
+
 	// Detailed component status
 	Symlinks []SymlinkStatus `json:"symlinks"`
 	Issues   []string        `json:"issues"`
 
-	// Installation metadata
+	// Installation metadata (deprecated - use InstalledTemplate instead)
 	InstallationDate *time.Time `json:"installation_date,omitempty"`
 	Version          string     `json:"version,omitempty"`
 	CommitHash       string     `json:"commit_hash,omitempty"`
@@ -48,6 +55,9 @@ type InstallationPlan struct {
 	// Basic information
 	TargetDir        string           `json:"target_dir"`
 	InstallationType InstallationType `json:"installation_type"`
+
+	// Template information
+	Template templates.Template `json:"template"`
 
 	// File operations
 	ExistingFiles []string `json:"existing_files"` // Files that already exist
@@ -84,11 +94,12 @@ func NewStatusInfo(targetDir string) *StatusInfo {
 	}
 }
 
-// NewInstallationPlan creates a new InstallationPlan for the given target directory
-func NewInstallationPlan(targetDir string, installType InstallationType) *InstallationPlan {
+// NewInstallationPlan creates a new InstallationPlan for the given target directory and template
+func NewInstallationPlan(targetDir string, installType InstallationType, template templates.Template) *InstallationPlan {
 	return &InstallationPlan{
 		TargetDir:           targetDir,
 		InstallationType:    installType,
+		Template:            template,
 		ExistingFiles:       make([]string, 0),
 		WillReplace:         make([]string, 0),
 		WillPreserve:        make([]string, 0),

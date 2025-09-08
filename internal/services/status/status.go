@@ -1,12 +1,14 @@
 package status
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	"strategic-claude-basic-cli/internal/config"
 	"strategic-claude-basic-cli/internal/models"
+	"strategic-claude-basic-cli/internal/templates"
 	"strategic-claude-basic-cli/internal/utils"
 )
 
@@ -52,6 +54,16 @@ func (s *Service) CheckInstallation(targetDir string) (*models.StatusInfo, error
 	// Check .claude directory structure
 	if err := s.verifyClaudeDirectory(status); err != nil {
 		return nil, fmt.Errorf("failed to verify claude directory: %w", err)
+	}
+
+	// Load template information if installation exists
+	if status.StrategicClaudeDir {
+		templateInfo, err := s.loadTemplateInfo(absTarget)
+		if err != nil {
+			status.AddIssue(fmt.Sprintf("Failed to load template information: %v", err))
+		} else {
+			status.InstalledTemplate = templateInfo
+		}
 	}
 
 	// Validate symlinks
@@ -215,4 +227,29 @@ func (s *Service) GetStatusSummary(status *models.StatusInfo) string {
 	}
 
 	return "Strategic Claude Basic is installed and configured correctly"
+}
+
+// loadTemplateInfo loads template metadata from the installation directory
+func (s *Service) loadTemplateInfo(targetDir string) (*templates.TemplateInfo, error) {
+	strategicDir := filepath.Join(targetDir, config.StrategicClaudeBasicDir)
+	templateInfoPath := filepath.Join(strategicDir, config.TemplateInfoFile)
+
+	// Check if file exists
+	if _, err := os.Stat(templateInfoPath); os.IsNotExist(err) {
+		return nil, nil // No template info found
+	}
+
+	// Read file
+	data, err := os.ReadFile(templateInfoPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read template info from %s: %w", templateInfoPath, err)
+	}
+
+	// Unmarshal JSON
+	var templateInfo templates.TemplateInfo
+	if err := json.Unmarshal(data, &templateInfo); err != nil {
+		return nil, fmt.Errorf("failed to parse template info JSON: %w", err)
+	}
+
+	return &templateInfo, nil
 }
