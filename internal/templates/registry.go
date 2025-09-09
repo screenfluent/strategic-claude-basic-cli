@@ -21,7 +21,7 @@ var Registry = map[string]Template{
 		Description: "Main template for general development projects with comprehensive Claude Code integration",
 		RepoURL:     DefaultRepoURL,
 		Branch:      "main",
-		Commit:      "d33e0185e133b57091e7608abec2e64b32a71fc0", // Current pinned commit - adds pre-commit config
+		Commit:      "b90082f55285c7ddce81e7c6f7d79890f382781a", // Latest commit - dual template system for plan commands
 		Language:    "",                                         // Language-agnostic
 		Tags:        []string{"general", "default"},
 	},
@@ -31,7 +31,7 @@ var Registry = map[string]Template{
 		Description: "Specialized template for CCR (Claude Code Router) workflows and development patterns",
 		RepoURL:     DefaultRepoURL,
 		Branch:      "ccr-template",
-		Commit:      "0aff453eec9caf909800ffc57094dd327c5620f4", // Pinned commit for ccr-template branch - synced with main
+		Commit:      "45ef4d75b40dc623d396831baa921c9554211015", // Latest commit - merged dual template system from main
 		Language:    "",
 		Tags:        []string{"ccr", "workflow", "specialized"},
 	},
