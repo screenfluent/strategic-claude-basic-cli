@@ -191,6 +191,11 @@ func (s *Service) Install(installConfig models.InstallConfig) error {
 		}
 	}
 
+	// Apply gitignore templates based on mode
+	if err := s.applyGitignoreTemplates(tempDir, plan.TargetDir, installConfig.GitignoreMode); err != nil {
+		return fmt.Errorf("failed to apply gitignore templates: %w", err)
+	}
+
 	// Save template metadata
 	if err := s.saveTemplateInfo(plan.TargetDir, template); err != nil {
 		return fmt.Errorf("failed to save template metadata: %w", err)
@@ -490,6 +495,46 @@ func (s *Service) executePostInstallScript(sourceDir, targetDir string) error {
 	if err := s.scriptService.RemoveScript(targetDir, config.PostInstallScript); err != nil {
 		// Log warning but don't fail installation
 		fmt.Printf("Warning: Failed to remove post-install script: %v\n", err)
+	}
+
+	return nil
+}
+
+// applyGitignoreTemplates applies gitignore templates based on the selected mode
+func (s *Service) applyGitignoreTemplates(sourceDir, targetDir, gitignoreMode string) error {
+	if gitignoreMode == "track" {
+		// Track mode - don't apply any gitignore templates
+		return nil
+	}
+
+	// Define template mappings based on mode
+	var templateMappings map[string]string
+
+	switch gitignoreMode {
+	case "all":
+		templateMappings = map[string]string{
+			"dot_claude-strategic-ignore.template":           ".claude/.gitignore",
+			"dot_strategic-claude-basic-ignore-all.template": ".strategic-claude-basic/.gitignore",
+		}
+	case "non-user":
+		templateMappings = map[string]string{
+			"dot_claude-strategic-ignore.template":                     ".claude/.gitignore",
+			"dot_strategic-claude-basic-ignore-non-user-dirs.template": ".strategic-claude-basic/.gitignore",
+		}
+	default:
+		return fmt.Errorf("unsupported gitignore mode: %s", gitignoreMode)
+	}
+
+	// Apply each template
+	for templateFile, targetFile := range templateMappings {
+		templatePath := filepath.Join(sourceDir, config.StrategicClaudeBasicDir, "templates", "ignore", templateFile)
+		targetPath := filepath.Join(targetDir, targetFile)
+
+		if err := s.filesystemService.ApplyGitignoreTemplate(templatePath, targetPath); err != nil {
+			return fmt.Errorf("failed to apply template %s: %w", templateFile, err)
+		}
+
+		fmt.Printf("Applied gitignore template: %s -> %s\n", templateFile, targetFile)
 	}
 
 	return nil

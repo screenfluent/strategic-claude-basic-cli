@@ -195,14 +195,15 @@ func TestInitCommand_StatusValidation(t *testing.T) {
 func runInitTest(targetDir string, force, forceCore, dryRun bool) error {
 	// Create install configuration - always skip confirmation for tests
 	installConfig := models.InstallConfig{
-		TargetDir:   targetDir,
-		TemplateID:  "main", // Use main template for tests
-		Force:       force,
-		ForceCore:   forceCore,
-		SkipConfirm: true,  // Always skip confirmation in tests
-		NoBackup:    false, // Don't skip backups in tests (unless it causes issues)
-		DryRun:      dryRun,
-		Verbose:     false, // Keep quiet for tests
+		TargetDir:     targetDir,
+		TemplateID:    "main", // Use main template for tests
+		Force:         force,
+		ForceCore:     forceCore,
+		SkipConfirm:   true,  // Always skip confirmation in tests
+		NoBackup:      false, // Don't skip backups in tests (unless it causes issues)
+		DryRun:        dryRun,
+		Verbose:       false,   // Keep quiet for tests
+		GitignoreMode: "track", // Default gitignore mode for tests
 	}
 
 	// Validate configuration

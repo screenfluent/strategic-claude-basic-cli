@@ -15,12 +15,13 @@ type InstallConfig struct {
 	TemplateID string // ID of the template to install
 
 	// Installation behavior flags
-	Force       bool // Force installation, overwriting existing files
-	ForceCore   bool // Update only core framework files, preserving user content
-	SkipConfirm bool // Skip confirmation prompts (--yes flag)
-	NoBackup    bool // Skip creating backups of existing files
-	DryRun      bool // Show what would be done without making changes
-	Verbose     bool // Enable verbose output
+	Force         bool   // Force installation, overwriting existing files
+	ForceCore     bool   // Update only core framework files, preserving user content
+	SkipConfirm   bool   // Skip confirmation prompts (--yes flag)
+	NoBackup      bool   // Skip creating backups of existing files
+	DryRun        bool   // Show what would be done without making changes
+	Verbose       bool   // Enable verbose output
+	GitignoreMode string // Gitignore behavior: "track", "all", or "non-user"
 
 	// Optional custom backup directory
 	BackupDir string
@@ -46,16 +47,17 @@ type CleanConfig struct {
 // NewInstallConfig creates a new InstallConfig with default values
 func NewInstallConfig(targetDir string) *InstallConfig {
 	return &InstallConfig{
-		TargetDir:   targetDir,
-		TemplateID:  templates.DefaultTemplateID,
-		Force:       false,
-		ForceCore:   false,
-		SkipConfirm: false,
-		NoBackup:    false,
-		DryRun:      false,
-		Verbose:     false,
-		BackupDir:   "",
-		GitTimeout:  30 * time.Second,
+		TargetDir:     targetDir,
+		TemplateID:    templates.DefaultTemplateID,
+		Force:         false,
+		ForceCore:     false,
+		SkipConfirm:   false,
+		NoBackup:      false,
+		DryRun:        false,
+		Verbose:       false,
+		GitignoreMode: "track",
+		BackupDir:     "",
+		GitTimeout:    30 * time.Second,
 	}
 }
 
@@ -103,6 +105,19 @@ func (c *InstallConfig) Validate() error {
 	// Both force and force-core cannot be true at the same time
 	if c.Force && c.ForceCore {
 		return NewAppError(ErrorCodeInvalidConfiguration, "cannot specify both --force and --force-core flags", nil)
+	}
+
+	// Validate gitignore mode
+	validModes := []string{"track", "all", "non-user"}
+	validMode := false
+	for _, mode := range validModes {
+		if c.GitignoreMode == mode {
+			validMode = true
+			break
+		}
+	}
+	if !validMode {
+		return NewAppError(ErrorCodeInvalidConfiguration, "invalid gitignore mode: "+c.GitignoreMode, nil)
 	}
 
 	return nil

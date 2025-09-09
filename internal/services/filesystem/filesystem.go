@@ -1,6 +1,7 @@
 package filesystem
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -580,4 +581,133 @@ func (s *Service) GetBackupPath(targetDir string) string {
 	timestamp := time.Now().Format("20060102-150405")
 	backupName := fmt.Sprintf("%s%s", config.BackupDirPrefix, timestamp)
 	return filepath.Join(targetDir, backupName)
+}
+
+// ApplyGitignoreTemplate applies a gitignore template to a target location
+func (s *Service) ApplyGitignoreTemplate(templatePath, targetPath string) error {
+	if templatePath == "" || targetPath == "" {
+		return models.NewAppError(
+			models.ErrorCodeValidationFailed,
+			"Template and target paths cannot be empty",
+			nil,
+		)
+	}
+
+	// Check if template exists
+	if _, err := os.Stat(templatePath); os.IsNotExist(err) {
+		utils.DisplayWarning(fmt.Sprintf("Gitignore template %s not found, skipping", templatePath))
+		return nil
+	}
+
+	// Read template content
+	templateContent, err := s.readFileLines(templatePath)
+	if err != nil {
+		return fmt.Errorf("failed to read gitignore template: %w", err)
+	}
+
+	// Check if target .gitignore exists
+	if _, err := os.Stat(targetPath); err == nil {
+		// File exists, merge content
+		return s.mergeGitignoreContent(targetPath, templateContent)
+	}
+
+	// File doesn't exist, create new one
+	return s.writeGitignoreContent(targetPath, templateContent)
+}
+
+// readFileLines reads a file and returns its lines
+func (s *Service) readFileLines(filePath string) ([]string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var lines []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return lines, nil
+}
+
+// mergeGitignoreContent merges template content with existing .gitignore
+func (s *Service) mergeGitignoreContent(targetPath string, templateLines []string) error {
+	// Read existing content
+	existingLines, err := s.readFileLines(targetPath)
+	if err != nil {
+		return fmt.Errorf("failed to read existing .gitignore: %w", err)
+	}
+
+	// Create backup of existing .gitignore
+	backupPath := targetPath + ".backup"
+	if err := s.CopyFile(targetPath, backupPath); err != nil {
+		utils.DisplayWarning(fmt.Sprintf("Failed to create backup of .gitignore: %v", err))
+	}
+
+	// Merge content with deduplication
+	mergedLines := s.deduplicateGitignoreLines(existingLines, templateLines)
+
+	// Write merged content
+	return s.writeGitignoreContent(targetPath, mergedLines)
+}
+
+// writeGitignoreContent writes gitignore content to target file
+func (s *Service) writeGitignoreContent(targetPath string, lines []string) error {
+	// Ensure target directory exists
+	targetDir := filepath.Dir(targetPath)
+	if err := s.CreateDirectory(targetDir); err != nil {
+		return fmt.Errorf("failed to create target directory: %w", err)
+	}
+
+	file, err := os.Create(targetPath)
+	if err != nil {
+		return fmt.Errorf("failed to create .gitignore file: %w", err)
+	}
+	defer file.Close()
+
+	// Write Strategic Claude Basic header
+	if _, err := file.WriteString("# Strategic Claude Basic entries\n"); err != nil {
+		return fmt.Errorf("failed to write header to .gitignore: %w", err)
+	}
+
+	// Write content
+	for _, line := range lines {
+		if _, err := file.WriteString(line + "\n"); err != nil {
+			return fmt.Errorf("failed to write line to .gitignore: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// deduplicateGitignoreLines merges and deduplicates gitignore lines
+func (s *Service) deduplicateGitignoreLines(existing, template []string) []string {
+	seen := make(map[string]bool)
+	var result []string
+
+	// Add existing lines first (preserve user content order)
+	for _, line := range existing {
+		trimmed := strings.TrimSpace(line)
+		if trimmed != "" && !seen[trimmed] && !strings.HasPrefix(trimmed, "# Strategic Claude Basic") {
+			result = append(result, line)
+			seen[trimmed] = true
+		}
+	}
+
+	// Add template lines that aren't duplicates
+	for _, line := range template {
+		trimmed := strings.TrimSpace(line)
+		if trimmed != "" && !seen[trimmed] {
+			result = append(result, line)
+			seen[trimmed] = true
+		}
+	}
+
+	return result
 }

@@ -16,12 +16,13 @@ import (
 )
 
 var (
-	force      bool
-	forceCore  bool
-	yes        bool
-	noBackup   bool
-	dryRun     bool
-	templateID string
+	force         bool
+	forceCore     bool
+	yes           bool
+	noBackup      bool
+	dryRun        bool
+	templateID    string
+	gitignoreMode string
 )
 
 var initCmd = &cobra.Command{
@@ -45,12 +46,18 @@ Template selection:
 - Use --template to specify a template ID directly
 - Without --template, you'll be prompted to choose interactively
 
+Gitignore behavior:
+- track: Track all files (default)
+- all: Ignore entire framework directories
+- non-user: Ignore only framework files (core, guides, templates)
+
 Examples:
   strategic-claude-basic-cli init                      # Install with template selection
   strategic-claude-basic-cli init --template=main     # Install main template
   strategic-claude-basic-cli init --template=ccr      # Install CCR template
   strategic-claude-basic-cli init ./my-project        # Install in specific directory
   strategic-claude-basic-cli init --force-core        # Update core files only
+  strategic-claude-basic-cli init --gitignore-mode=all # Ignore all framework files
   strategic-claude-basic-cli init --dry-run           # Preview what would be done`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -67,6 +74,7 @@ func init() {
 	initCmd.Flags().BoolVar(&noBackup, "no-backup", false, "skip creating backups of existing files")
 	initCmd.Flags().BoolVar(&dryRun, "dry-run", false, "show what would be done without making changes")
 	initCmd.Flags().StringVar(&templateID, "template", "", "template ID to install (main, ccr, etc.)")
+	initCmd.Flags().StringVar(&gitignoreMode, "gitignore-mode", "", "gitignore behavior: track, all, or non-user (default: track)")
 
 	// Custom completion for directory argument
 	initCmd.ValidArgsFunction = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -83,6 +91,14 @@ func init() {
 	}); err != nil {
 		// This should not happen in normal operation, but we handle it for completeness
 		fmt.Fprintf(os.Stderr, "Warning: failed to register completion for --template flag: %v\n", err)
+	}
+
+	// Add completion for gitignore-mode flag
+	if err := initCmd.RegisterFlagCompletionFunc("gitignore-mode", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"track", "all", "non-user"}, cobra.ShellCompDirectiveNoFileComp
+	}); err != nil {
+		// This should not happen in normal operation, but we handle it for completeness
+		fmt.Fprintf(os.Stderr, "Warning: failed to register completion for --gitignore-mode flag: %v\n", err)
 	}
 }
 
@@ -102,8 +118,8 @@ func runInit(args []string) error {
 	}
 
 	utils.VerbosePrintf(verbose, "Target directory: %s\n", absTarget)
-	utils.VerbosePrintf(verbose, "Flags - Force: %v, Force Core: %v, Yes: %v, No Backup: %v, Dry Run: %v, Template: %s\n",
-		force, forceCore, yes, noBackup, dryRun, templateID)
+	utils.VerbosePrintf(verbose, "Flags - Force: %v, Force Core: %v, Yes: %v, No Backup: %v, Dry Run: %v, Template: %s, Gitignore Mode: %s\n",
+		force, forceCore, yes, noBackup, dryRun, templateID, gitignoreMode)
 
 	// Handle template selection
 	selectedTemplateID, err := selectTemplate(templateID, yes)
@@ -114,6 +130,15 @@ func runInit(args []string) error {
 
 	utils.VerbosePrintf(verbose, "Selected template: %s\n", selectedTemplateID)
 
+	// Handle gitignore mode selection
+	selectedGitignoreMode, err := selectGitignoreMode(gitignoreMode, yes)
+	if err != nil {
+		utils.DisplayError(err)
+		return err
+	}
+
+	utils.VerbosePrintf(verbose, "Selected gitignore mode: %s\n", selectedGitignoreMode)
+
 	// Validate prerequisites
 	if err := validatePrerequisites(); err != nil {
 		utils.DisplayError(err)
@@ -122,13 +147,14 @@ func runInit(args []string) error {
 
 	// Create install configuration
 	installConfig := models.InstallConfig{
-		TargetDir:   absTarget,
-		TemplateID:  selectedTemplateID,
-		Force:       force,
-		ForceCore:   forceCore,
-		SkipConfirm: yes,
-		NoBackup:    noBackup,
-		Verbose:     verbose,
+		TargetDir:     absTarget,
+		TemplateID:    selectedTemplateID,
+		Force:         force,
+		ForceCore:     forceCore,
+		SkipConfirm:   yes,
+		NoBackup:      noBackup,
+		Verbose:       verbose,
+		GitignoreMode: selectedGitignoreMode,
 	}
 
 	// Validate install configuration
@@ -215,6 +241,38 @@ func selectTemplate(templateFlag string, skipPrompt bool) (string, error) {
 // selectTemplateInteractively presents template options to the user for selection using Bubble Tea
 func selectTemplateInteractively() (string, error) {
 	return ui.SelectTemplate()
+}
+
+// selectGitignoreMode handles gitignore mode selection based on flags and user input
+func selectGitignoreMode(modeFlag string, skipPrompt bool) (string, error) {
+	// If mode is specified via flag, validate and use it
+	if modeFlag != "" {
+		validModes := []string{"track", "all", "non-user"}
+		validMode := false
+		for _, mode := range validModes {
+			if modeFlag == mode {
+				validMode = true
+				break
+			}
+		}
+		if !validMode {
+			return "", fmt.Errorf("invalid gitignore mode '%s'. Must be one of: %v", modeFlag, validModes)
+		}
+		return modeFlag, nil
+	}
+
+	// If skipping prompts, use default mode
+	if skipPrompt {
+		return "track", nil
+	}
+
+	// Interactive gitignore mode selection
+	return selectGitignoreModeInteractively()
+}
+
+// selectGitignoreModeInteractively presents gitignore mode options to the user for selection using Bubble Tea
+func selectGitignoreModeInteractively() (string, error) {
+	return ui.SelectGitignoreMode()
 }
 
 // getInstallationConfirmation displays the installation plan and asks for user confirmation
