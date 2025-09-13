@@ -2,7 +2,7 @@
 
 # Binary name and source package
 BINARY_NAME=strategic-claude
-CMD_PKG=strategic-claude-basic-cli
+CMD_PKG=strategic-claude
 BUILD_DIR=bin
 
 # Version information

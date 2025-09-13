@@ -40,7 +40,7 @@ Strategic Claude Basic CLI automates the complex setup process of integrating St
 ### Install with Go
 
 ```bash
-go install github.com/Fomo-Driven-Development/strategic-claude-basic-cli/cmd/strategic-claude-basic-cli@latest
+go install github.com/Fomo-Driven-Development/strategic-claude-basic-cli/cmd/strategic-claude@latest
 ```
 
 ### Build from source
