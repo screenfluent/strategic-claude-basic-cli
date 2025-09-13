@@ -21,7 +21,7 @@ var Registry = map[string]Template{
 		Description: "Main template for general development projects with comprehensive Claude Code integration",
 		RepoURL:     DefaultRepoURL,
 		Branch:      "main",
-		Commit:      "fbf39529e568049d543d515214c0bd3305df4037", // Latest commit - consolidate ntfy topics and centralize PROJECT_NAME formatting
+		Commit:      "a2d9257c2f29e0a1b3fab1b726d0538a62b9e236", // Latest commit - add technical deep dive command and template
 		Language:    "",                                         // Language-agnostic
 		Tags:        []string{"general", "default"},
 	},
@@ -31,7 +31,7 @@ var Registry = map[string]Template{
 		Description: "Specialized template for CCR (Claude Code Router) workflows and development patterns",
 		RepoURL:     DefaultRepoURL,
 		Branch:      "ccr-template",
-		Commit:      "ef82c28191db196ca320010eed04933811177783", // Latest commit - merge branch 'main' into ccr-template (with notification improvements)
+		Commit:      "14de4366ea687d7658279fb88894d28bb5c9f7da", // Latest commit - merge branch 'main' into ccr-template (with technical deep dive)
 		Language:    "",
 		Tags:        []string{"ccr", "workflow", "specialized"},
 	},
