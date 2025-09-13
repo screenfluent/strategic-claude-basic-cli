@@ -10,7 +10,7 @@ const (
 	DefaultTemplateID = "main"
 
 	// Repository base URL
-	DefaultRepoURL = "git@github.com:Fomo-Driven-Development/strategic-claude-base.git"
+	DefaultRepoURL = "https://github.com/Fomo-Driven-Development/strategic-claude-base.git"
 )
 
 // Registry holds all available templates
