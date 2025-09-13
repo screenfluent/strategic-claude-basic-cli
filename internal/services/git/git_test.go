@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"strategic-claude-basic-cli/internal/config"
-	"strategic-claude-basic-cli/internal/models"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/config"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/models"
 )
 
 func TestService_ValidateGitInstalled(t *testing.T) {

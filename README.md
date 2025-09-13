@@ -1,10 +1,12 @@
 # Strategic Claude Basic CLI
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://golang.org/)
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/dgnsrekt/strategic-claude-basic-cli/releases)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/Fomo-Driven-Development/strategic-claude-basic-cli/releases)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 A command-line tool that simplifies the integration of the [Strategic Claude Basic framework](https://github.com/Fomo-Driven-Development/strategic-claude-base) into your development projects.
+
+> **For framework usage, slash commands, and workflow documentation**, see the [Strategic Claude Basic Framework](https://github.com/Fomo-Driven-Development/strategic-claude-base) repository.
 
 ## Overview
 
@@ -38,13 +40,13 @@ Strategic Claude Basic CLI automates the complex setup process of integrating St
 ### Install with Go
 
 ```bash
-go install github.com/dgnsrekt/strategic-claude-basic-cli/cmd/strategic-claude-basic-cli@latest
+go install github.com/Fomo-Driven-Development/strategic-claude-basic-cli/cmd/strategic-claude-basic-cli@latest
 ```
 
 ### Build from source
 
 ```bash
-git clone https://github.com/dgnsrekt/strategic-claude-basic-cli.git
+git clone https://github.com/Fomo-Driven-Development/strategic-claude-basic-cli.git
 cd strategic-claude-basic-cli
 make build
 # Binary will be available at ./bin/strategic-claude
@@ -154,25 +156,42 @@ After installation, your project will have this structure:
 
 ```
 your-project/
-├── .strategic-claude-basic/          # Framework installation
-│   ├── core/                        # Framework components (updated)
-│   │   ├── agents/                  # Claude agents
-│   │   ├── commands/                # Claude commands
-│   │   └── hooks/                   # Claude hooks
-│   ├── guides/                      # Framework documentation (updated)
-│   ├── templates/                   # Framework templates (updated)
-│   ├── archives/                    # Your archived work (preserved)
-│   ├── issues/                      # Your issues tracking (preserved)
-│   ├── plan/                        # Your planning docs (preserved)
-│   ├── research/                    # Your research notes (preserved)
-│   └── summary/                     # Your summaries (preserved)
-└── .claude/                         # Claude Code integration
-    ├── agents/
-    │   └── strategic -> ../../.strategic-claude-basic/core/agents
-    ├── commands/
-    │   └── strategic -> ../../.strategic-claude-basic/core/commands
-    └── hooks/
-        └── strategic -> ../../.strategic-claude-basic/core/hooks
+├── .claude/                         # Claude Code integration
+│   ├── agents/                      # Custom agent definitions
+│   │   └── strategic -> ../../.strategic-claude-basic/core/agents
+│   ├── commands/                    # Custom commands
+│   │   └── strategic -> ../../.strategic-claude-basic/core/commands
+│   ├── hooks/                       # Git hooks
+│   │   └── strategic -> ../../.strategic-claude-basic/core/hooks
+│   └── settings.local.json
+└── .strategic-claude-basic/         # Framework installation
+    ├── archives/                    # Archived documentation (preserved)
+    │   └── .gitkeep
+    ├── core/                        # Commands and agent definitions (updated)
+    │   ├── agents/                  # Core agent definitions
+    │   ├── commands/                # Core commands
+    │   └── hooks/                   # Core hooks
+    ├── guides/                      # User guides (updated)
+    │   └── ast-grep-patterns.md
+    ├── issues/                      # Issue tracking (preserved)
+    │   └── CLAUDE.md
+    ├── plan/                        # Implementation plans (preserved)
+    │   └── CLAUDE.md
+    ├── product/                     # Product documentation (preserved)
+    │   └── CLAUDE.md
+    ├── research/                    # Research documentation (preserved)
+    │   └── CLAUDE.md
+    ├── summary/                     # Work summaries (preserved)
+    │   └── CLAUDE.md
+    ├── templates/                   # Document templates (updated)
+    │   ├── agents/                  # Agent templates
+    │   ├── commands/                # Command templates
+    │   ├── hooks/                   # Hook templates
+    │   ├── ignore/                  # Ignore file templates
+    │   └── mcps/                    # MCP templates
+    ├── tools/                       # Utility tools (preserved)
+    └── validation/                  # Validation scripts (preserved)
+        └── CLAUDE.md
 ```
 
 ### Framework vs User Content
@@ -186,8 +205,34 @@ your-project/
 - `archives/` - Your archived work and completed projects
 - `issues/` - Project-specific issue tracking
 - `plan/` - Your planning documents and strategies
+- `product/` - Product documentation and roadmaps
 - `research/` - Your research notes and findings
 - `summary/` - Your summaries and reports
+- `tools/` - Custom utility tools and scripts
+- `validation/` - Validation scripts and testing tools
+
+## Framework Usage
+
+Once installed, the Strategic Claude Basic framework provides structured workflows for AI-assisted development:
+
+### Basic Workflow
+```
+/research → /plan → /read_execute_plan → /summarize
+```
+
+### Context Management
+- **Always run `/context` between commands** to monitor context usage
+- Keep context under 40% for optimal performance  
+- Use `/compact` or `/clear` when approaching limits
+- Run `/summarize` before clearing context to capture incomplete work
+
+### Key Commands
+- `/research` - Analyze codebase and requirements with parallel sub-agents
+- `/plan` - Create detailed implementation plans with phases and checkboxes
+- `/read_execute_plan` - Execute plans systematically, tracking progress
+- `/summarize` - Document problems and incomplete work for future sessions
+
+For complete documentation on workflows, slash commands, hooks, and advanced usage, see the [Strategic Claude Basic Framework](https://github.com/Fomo-Driven-Development/strategic-claude-base) repository.
 
 ## Installation Types
 
@@ -206,7 +251,7 @@ For updating framework while preserving your work:
 strategic-claude init --force-core
 ```
 - Updates `core/`, `guides/`, `templates/` directories
-- Preserves `archives/`, `issues/`, `plan/`, `research/`, `summary/`
+- Preserves `archives/`, `issues/`, `plan/`, `product/`, `research/`, `summary/`, `tools/`, `validation/`
 - Maintains your custom content and configurations
 
 ### Full Overwrite (`--force`)
@@ -278,21 +323,6 @@ Strategic Claude Basic CLI pins the framework to specific, tested commits to ens
 - No unexpected changes from upstream repository updates
 - Consistent, predictable behavior across installations
 
-## Related Documentation
-
-- **[Architecture](ARCHITECTURE.md)** - Detailed system design and technical architecture
-- **[Product Requirements](PRD.md)** - Features, use cases, and specifications
-- **[Development Roadmap](ROADMAP.md)** - Development phases and progress tracking
-- **[Claude Integration](CLAUDE.md)** - Instructions for working with Claude Code
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -300,5 +330,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 - **Documentation**: Check the docs in this repository
-- **Issues**: Report bugs or request features on [GitHub Issues](https://github.com/dgnsrekt/strategic-claude-basic-cli/issues)
-- **Discussions**: Join conversations on [GitHub Discussions](https://github.com/dgnsrekt/strategic-claude-basic-cli/discussions)
+- **Issues**: Report bugs or request features on [GitHub Issues](https://github.com/Fomo-Driven-Development/strategic-claude-basic-cli/issues)
+- **Discussions**: Join conversations on [GitHub Discussions](https://github.com/Fomo-Driven-Development/strategic-claude-basic-cli/discussions)

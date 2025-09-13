@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"strategic-claude-basic-cli/internal/config"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/config"
 
 	"github.com/spf13/cobra"
 )

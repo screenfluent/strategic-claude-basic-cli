@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"strategic-claude-basic-cli/internal/models"
-	"strategic-claude-basic-cli/internal/services/status"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/models"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/status"
 
 	"github.com/spf13/cobra"
 )

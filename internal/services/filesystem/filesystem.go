@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"strategic-claude-basic-cli/internal/config"
-	"strategic-claude-basic-cli/internal/models"
-	"strategic-claude-basic-cli/internal/utils"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/config"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/models"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/utils"
 )
 
 // Service handles file system operations for the Strategic Claude Basic CLI

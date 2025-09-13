@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"strategic-claude-basic-cli/internal/config"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/config"
 )
 
 func TestNew(t *testing.T) {

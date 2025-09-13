@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"strategic-claude-basic-cli/internal/config"
-	"strategic-claude-basic-cli/internal/models"
-	"strategic-claude-basic-cli/internal/services/installer"
-	"strategic-claude-basic-cli/internal/services/status"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/config"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/models"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/installer"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/status"
 )
 
 // Test constants

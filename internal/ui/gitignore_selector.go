@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"strategic-claude-basic-cli/internal/utils"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/utils"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

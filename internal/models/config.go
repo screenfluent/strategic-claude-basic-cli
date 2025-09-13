@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"strategic-claude-basic-cli/internal/templates"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/templates"
 )
 
 // InstallConfig holds configuration options for installation operations

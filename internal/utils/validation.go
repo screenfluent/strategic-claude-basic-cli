@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"strategic-claude-basic-cli/internal/models"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/models"
 )
 
 // PathValidator provides utilities for path validation

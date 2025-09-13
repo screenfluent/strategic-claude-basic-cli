@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"strategic-claude-basic-cli/internal/config"
-	"strategic-claude-basic-cli/internal/models"
-	"strategic-claude-basic-cli/internal/services/mcp"
-	"strategic-claude-basic-cli/internal/ui"
-	"strategic-claude-basic-cli/internal/utils"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/config"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/models"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/mcp"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/ui"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/utils"
 
 	"github.com/spf13/cobra"
 )

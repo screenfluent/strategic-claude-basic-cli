@@ -6,9 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"strategic-claude-basic-cli/internal/services/cleaner"
-	"strategic-claude-basic-cli/internal/services/status"
-	"strategic-claude-basic-cli/internal/utils"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/cleaner"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/status"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/utils"
 )
 
 var (

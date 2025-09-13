@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"strategic-claude-basic-cli/internal/models"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/models"
 )
 
 func TestPathValidator_ValidateDirectory(t *testing.T) {

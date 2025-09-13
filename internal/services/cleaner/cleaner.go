@@ -5,12 +5,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"strategic-claude-basic-cli/internal/config"
-	"strategic-claude-basic-cli/internal/models"
-	"strategic-claude-basic-cli/internal/services/filesystem"
-	"strategic-claude-basic-cli/internal/services/settings"
-	"strategic-claude-basic-cli/internal/services/status"
-	"strategic-claude-basic-cli/internal/services/symlink"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/config"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/models"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/filesystem"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/settings"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/status"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/symlink"
 )
 
 // Service handles cleanup operations for Strategic Claude Basic installations

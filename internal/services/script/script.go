@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"strategic-claude-basic-cli/internal/models"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/models"
 )
 
 // Service handles script operations for the Strategic Claude Basic CLI

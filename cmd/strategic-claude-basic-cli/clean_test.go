@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"strategic-claude-basic-cli/internal/config"
-	"strategic-claude-basic-cli/internal/services/cleaner"
-	"strategic-claude-basic-cli/internal/services/filesystem"
-	"strategic-claude-basic-cli/internal/services/symlink"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/config"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/cleaner"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/filesystem"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/symlink"
 )
 
 func TestCleanCommand_NoInstallation(t *testing.T) {

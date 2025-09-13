@@ -5,12 +5,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"strategic-claude-basic-cli/internal/models"
-	"strategic-claude-basic-cli/internal/services/git"
-	"strategic-claude-basic-cli/internal/services/installer"
-	"strategic-claude-basic-cli/internal/templates"
-	"strategic-claude-basic-cli/internal/ui"
-	"strategic-claude-basic-cli/internal/utils"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/models"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/git"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/installer"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/templates"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/ui"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/utils"
 
 	"github.com/spf13/cobra"
 )
