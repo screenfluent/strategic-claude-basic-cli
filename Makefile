@@ -1,7 +1,8 @@
 .PHONY: build test clean install run lint fmt fmt-check lint-strict pre-commit-check help
 
-# Binary name
-BINARY_NAME=strategic-claude-basic-cli
+# Binary name and source package
+BINARY_NAME=strategic-claude
+CMD_PKG=strategic-claude-basic-cli
 BUILD_DIR=bin
 
 # Version information
@@ -22,7 +23,7 @@ LDFLAGS=-ldflags "-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.da
 
 # Build the application
 build:
-	$(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) -v ./cmd/$(BINARY_NAME)
+	$(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) -v ./cmd/$(CMD_PKG)
 
 # Test the application
 test:
@@ -118,7 +119,7 @@ install: build
 
 # Run the application
 run:
-	$(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) -v ./cmd/$(BINARY_NAME)
+	$(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) -v ./cmd/$(CMD_PKG)
 	./$(BUILD_DIR)/$(BINARY_NAME)
 
 # Create build directory

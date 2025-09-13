@@ -47,7 +47,7 @@ go install github.com/dgnsrekt/strategic-claude-basic-cli/cmd/strategic-claude-b
 git clone https://github.com/dgnsrekt/strategic-claude-basic-cli.git
 cd strategic-claude-basic-cli
 make build
-# Binary will be available at ./bin/strategic-claude-basic-cli
+# Binary will be available at ./bin/strategic-claude
 ```
 
 ### Install binary to PATH
@@ -60,17 +60,17 @@ make install  # Installs to $GOPATH/bin or $HOME/go/bin
 
 1. **Initialize** Strategic Claude Basic in your project:
    ```bash
-   strategic-claude-basic-cli init
+   strategic-claude init
    ```
 
 2. **Check status** of your installation:
    ```bash
-   strategic-claude-basic-cli status
+   strategic-claude status
    ```
 
 3. **Update** framework core files (preserves your custom content):
    ```bash
-   strategic-claude-basic-cli init --force-core
+   strategic-claude init --force-core
    ```
 
 ## Usage
@@ -81,26 +81,26 @@ Install Strategic Claude Basic in a new or existing project:
 
 ```bash
 # Install in current directory
-strategic-claude-basic-cli init
+strategic-claude init
 
 # Install in specific directory
-strategic-claude-basic-cli init ./my-project
+strategic-claude init ./my-project
 
 # Preview what would be installed (dry run)
-strategic-claude-basic-cli init --dry-run
+strategic-claude init --dry-run
 
 # Install with auto-confirmation
-strategic-claude-basic-cli init --yes
+strategic-claude init --yes
 ```
 
 **Update existing installations:**
 
 ```bash
 # Update only framework files, preserve user content
-strategic-claude-basic-cli init --force-core
+strategic-claude init --force-core
 
 # Completely overwrite existing installation
-strategic-claude-basic-cli init --force
+strategic-claude init --force
 ```
 
 ### Check Status (`status`)
@@ -109,13 +109,13 @@ Verify your installation and diagnose issues:
 
 ```bash
 # Check current directory
-strategic-claude-basic-cli status
+strategic-claude status
 
 # Check specific directory
-strategic-claude-basic-cli status --target ./my-project
+strategic-claude status --target ./my-project
 
 # Verbose output with detailed diagnostics
-strategic-claude-basic-cli status --verbose
+strategic-claude status --verbose
 ```
 
 ### Clean Installation (`clean`)
@@ -124,13 +124,13 @@ Remove Strategic Claude Basic from your project:
 
 ```bash
 # Remove with confirmation prompt
-strategic-claude-basic-cli clean
+strategic-claude clean
 
 # Force removal without confirmation
-strategic-claude-basic-cli clean --force
+strategic-claude clean --force
 
 # Clean specific directory
-strategic-claude-basic-cli clean ./my-project
+strategic-claude clean ./my-project
 ```
 
 ### Shell Completions (`completions`)
@@ -139,13 +139,13 @@ Set up tab completion for your shell:
 
 ```bash
 # Generate completions for your shell
-strategic-claude-basic-cli completions bash
-strategic-claude-basic-cli completions zsh
-strategic-claude-basic-cli completions fish
-strategic-claude-basic-cli completions powershell
+strategic-claude completions bash
+strategic-claude completions zsh
+strategic-claude completions fish
+strategic-claude completions powershell
 
 # Install bash completions (example)
-strategic-claude-basic-cli completions bash > /usr/local/etc/bash_completion.d/strategic-claude-basic-cli
+strategic-claude completions bash > /usr/local/etc/bash_completion.d/strategic-claude
 ```
 
 ## Directory Structure
@@ -194,7 +194,7 @@ your-project/
 ### New Installation
 For projects without Strategic Claude Basic:
 ```bash
-strategic-claude-basic-cli init
+strategic-claude init
 ```
 - Installs complete `.strategic-claude-basic/` directory
 - Creates `.claude/` symlinks
@@ -203,7 +203,7 @@ strategic-claude-basic-cli init
 ### Core Update (`--force-core`)
 For updating framework while preserving your work:
 ```bash
-strategic-claude-basic-cli init --force-core
+strategic-claude init --force-core
 ```
 - Updates `core/`, `guides/`, `templates/` directories
 - Preserves `archives/`, `issues/`, `plan/`, `research/`, `summary/`
@@ -212,7 +212,7 @@ strategic-claude-basic-cli init --force-core
 ### Full Overwrite (`--force`)
 For complete reinstallation:
 ```bash
-strategic-claude-basic-cli init --force
+strategic-claude init --force
 ```
 - Replaces entire `.strategic-claude-basic/` directory
 - **Warning**: This will overwrite all your custom user content
@@ -230,7 +230,7 @@ strategic-claude-basic-cli init --force
 
 For detailed help on any command:
 ```bash
-strategic-claude-basic-cli [command] --help
+strategic-claude [command] --help
 ```
 
 ## Development

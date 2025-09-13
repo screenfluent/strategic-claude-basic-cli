@@ -24,10 +24,10 @@ make help           # Show all available targets
 ### CLI Usage
 ```bash
 # Build and test the CLI commands
-./bin/strategic-claude-basic-cli --help
-./bin/strategic-claude-basic-cli version
-./bin/strategic-claude-basic-cli init --help
-./bin/strategic-claude-basic-cli status --help
+./bin/strategic-claude --help
+./bin/strategic-claude version
+./bin/strategic-claude init --help
+./bin/strategic-claude status --help
 ```
 
 ### Version Management
