@@ -27,6 +27,7 @@ const (
 
 	// User directories that are preserved during updates
 	ArchivesDir   = "archives"
+	DecisionsDir  = "decisions"
 	IssuesDir     = "issues"
 	PlanDir       = "plan"
 	ProductDir    = "product"
@@ -53,7 +54,7 @@ const (
 	ReplacedDirs = "core/,guides/,templates/"
 
 	// User directories preserved during updates
-	UserPreservedDirs = "archives/,issues/,plan/,product/,research/,summary/,tools/,validation/"
+	UserPreservedDirs = "archives/,decisions/,issues/,plan/,product/,research/,summary/,tools/,validation/"
 
 	// Default timeout values
 	DefaultGitTimeout     = 30 * time.Second
@@ -118,6 +119,7 @@ func GetCoreDirectories() []string {
 func GetUserPreservedDirectories() []string {
 	return []string{
 		ArchivesDir,
+		DecisionsDir,
 		IssuesDir,
 		PlanDir,
 		ProductDir,
