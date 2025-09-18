@@ -45,6 +45,7 @@ func (s *Service) CheckInstallation(targetDir string) (*models.StatusInfo, error
 	status := models.NewStatusInfo(absTarget)
 	status.StrategicClaudeDirPath = filepath.Join(absTarget, config.StrategicClaudeBasicDir)
 	status.ClaudeDirPath = filepath.Join(absTarget, config.ClaudeDir)
+	status.CodexDirPath = filepath.Join(absTarget, config.CodexDir)
 
 	// Check .strategic-claude-basic directory
 	if err := s.detectStrategicClaudeBasic(status); err != nil {
@@ -54,6 +55,11 @@ func (s *Service) CheckInstallation(targetDir string) (*models.StatusInfo, error
 	// Check .claude directory structure
 	if err := s.verifyClaudeDirectory(status); err != nil {
 		return nil, fmt.Errorf("failed to verify claude directory: %w", err)
+	}
+
+	// Check .codex directory structure
+	if err := s.verifyCodexDirectory(status); err != nil {
+		return nil, fmt.Errorf("failed to verify codex directory: %w", err)
 	}
 
 	// Load template information if installation exists
@@ -68,12 +74,13 @@ func (s *Service) CheckInstallation(targetDir string) (*models.StatusInfo, error
 
 	// Validate symlinks
 	s.validateSymlinks(status)
+	s.validateCodexSymlinks(status)
 
 	// Identify any issues
 	s.identifyIssues(status)
 
 	// Determine overall installation status
-	status.IsInstalled = status.StrategicClaudeDir && status.ClaudeDir && status.ValidSymlinks() > 0
+	status.IsInstalled = status.StrategicClaudeDir && (status.ClaudeDir || status.CodexDir) && (status.ValidSymlinks() > 0 || status.ValidCodexSymlinks() > 0)
 
 	return status, nil
 }
@@ -213,6 +220,76 @@ func (s *Service) identifyIssues(status *models.StatusInfo) {
 
 	if status.StrategicClaudeDir && status.ClaudeDir && totalSymlinks == 0 {
 		status.AddIssue("Installation directories exist but no strategic symlinks were found")
+	}
+}
+
+// verifyCodexDirectory checks if the .codex directory exists and has the correct structure
+func (s *Service) verifyCodexDirectory(status *models.StatusInfo) error {
+	codexDir := status.CodexDirPath
+
+	// Check if directory exists
+	info, err := os.Stat(codexDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			status.CodexDir = false
+			// Only report as issue if strategic-claude-basic is installed (indicating expectation for integration dirs)
+			if status.StrategicClaudeDir {
+				status.AddIssue(".codex directory does not exist")
+			}
+			return nil
+		}
+		return fmt.Errorf("failed to stat codex directory: %w", err)
+	}
+
+	if !info.IsDir() {
+		status.CodexDir = false
+		status.AddIssue(".codex exists but is not a directory")
+		return nil
+	}
+
+	status.CodexDir = true
+
+	// Check for required subdirectories
+	requiredSubdirs := []string{config.PromptsDir, config.HooksDir}
+	for _, subdir := range requiredSubdirs {
+		subdirPath := filepath.Join(codexDir, subdir)
+		if _, err := os.Stat(subdirPath); os.IsNotExist(err) {
+			status.AddIssue(fmt.Sprintf("Missing codex subdirectory: %s", subdir))
+		}
+	}
+
+	return nil
+}
+
+// validateCodexSymlinks validates all Codex symlinks and populates status
+func (s *Service) validateCodexSymlinks(status *models.StatusInfo) {
+	if !status.CodexDir {
+		return // Skip if .codex directory doesn't exist
+	}
+
+	codexDir := status.CodexDirPath
+	requiredSymlinks := config.GetCodexRequiredSymlinks()
+
+	for symlinkPath, expectedTarget := range requiredSymlinks {
+		fullSymlinkPath := filepath.Join(codexDir, symlinkPath)
+
+		symlinkStatus, err := s.fsValidator.ValidateSymlink(fullSymlinkPath, expectedTarget)
+		if err != nil {
+			// Create a basic status entry for the error
+			status.AddCodexSymlink(models.SymlinkStatus{
+				Name:   filepath.Base(symlinkPath),
+				Path:   fullSymlinkPath,
+				Valid:  false,
+				Target: "",
+				Exists: false,
+				Error:  fmt.Sprintf("Failed to validate codex symlink: %v", err),
+			})
+			continue
+		}
+
+		if symlinkStatus != nil {
+			status.AddCodexSymlink(*symlinkStatus)
+		}
 	}
 }
 

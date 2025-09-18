@@ -7,6 +7,7 @@ import (
 
 	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/config"
 	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/models"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/codexconfig"
 	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/filesystem"
 	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/settings"
 	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/status"
@@ -15,28 +16,32 @@ import (
 
 // Service handles cleanup operations for Strategic Claude Basic installations
 type Service struct {
-	filesystemService *filesystem.Service
-	symlinkService    *symlink.Service
-	statusService     *status.Service
-	settingsService   *settings.Service
+	filesystemService  *filesystem.Service
+	symlinkService     *symlink.Service
+	statusService      *status.Service
+	settingsService    *settings.Service
+	codexConfigService *codexconfig.Service
 }
 
 // New creates a new cleaner service instance
 func New() *Service {
 	return &Service{
-		filesystemService: filesystem.New(),
-		symlinkService:    symlink.New(),
-		statusService:     status.NewService(),
-		settingsService:   settings.New(),
+		filesystemService:  filesystem.New(),
+		symlinkService:     symlink.New(),
+		statusService:      status.NewService(),
+		settingsService:    settings.New(),
+		codexConfigService: codexconfig.New(),
 	}
 }
 
 // CleanupResult represents the result of a cleanup operation
 type CleanupResult struct {
 	// What was removed
-	RemovedDirectory bool     `json:"removed_directory"`
-	RemovedSymlinks  []string `json:"removed_symlinks"`
-	CleanedSettings  bool     `json:"cleaned_settings"`
+	RemovedDirectory    bool     `json:"removed_directory"`
+	RemovedSymlinks     []string `json:"removed_symlinks"`
+	RemovedCodexSymlinks []string `json:"removed_codex_symlinks"`
+	CleanedSettings     bool     `json:"cleaned_settings"`
+	CleanedCodexConfig  bool     `json:"cleaned_codex_config"`
 
 	// What was preserved
 	PreservedFiles []string `json:"preserved_files"`
@@ -63,12 +68,13 @@ func (s *Service) RemoveInstallation(targetDir string) (*CleanupResult, error) {
 	}
 
 	result := &CleanupResult{
-		RemovedSymlinks:    make([]string, 0),
-		PreservedFiles:     make([]string, 0),
-		CleanedDirectories: make([]string, 0),
-		Warnings:           make([]string, 0),
-		Errors:             make([]string, 0),
-		Success:            false,
+		RemovedSymlinks:     make([]string, 0),
+		RemovedCodexSymlinks: make([]string, 0),
+		PreservedFiles:      make([]string, 0),
+		CleanedDirectories:  make([]string, 0),
+		Warnings:            make([]string, 0),
+		Errors:              make([]string, 0),
+		Success:             false,
 	}
 
 	// Get current installation status
@@ -79,7 +85,7 @@ func (s *Service) RemoveInstallation(targetDir string) (*CleanupResult, error) {
 	}
 
 	// If nothing is installed, return early with success
-	if !statusInfo.IsInstalled && !statusInfo.StrategicClaudeDir && !statusInfo.ClaudeDir {
+	if !statusInfo.IsInstalled && !statusInfo.StrategicClaudeDir && !statusInfo.ClaudeDir && !statusInfo.CodexDir {
 		result.Success = true
 		result.Warnings = append(result.Warnings, "No Strategic Claude Basic installation found")
 		return result, nil
@@ -101,6 +107,14 @@ func (s *Service) RemoveInstallation(targetDir string) (*CleanupResult, error) {
 	if len(result.RemovedSymlinks) > 0 || result.RemovedDirectory {
 		if err := s.cleanSettings(targetDir, result); err != nil {
 			result.Warnings = append(result.Warnings, fmt.Sprintf("Warning during settings cleanup: %v", err))
+			// Non-fatal error, continue
+		}
+	}
+
+	// Step 3.5: Clean Codex config.toml (only if we removed other components)
+	if len(result.RemovedCodexSymlinks) > 0 || result.RemovedDirectory {
+		if err := s.cleanCodexConfig(targetDir, result); err != nil {
+			result.Warnings = append(result.Warnings, fmt.Sprintf("Warning during codex config cleanup: %v", err))
 			// Non-fatal error, continue
 		}
 	}
@@ -165,6 +179,57 @@ func (s *Service) removeSymlinks(targetDir string, result *CleanupResult) error 
 		result.RemovedSymlinks = append(result.RemovedSymlinks, symlinkPath)
 	}
 
+	// Also remove Codex symlinks
+	if err := s.removeCodexSymlinks(targetDir, result); err != nil {
+		return fmt.Errorf("failed to remove codex symlinks: %w", err)
+	}
+
+	return nil
+}
+
+// removeCodexSymlinks removes Strategic Claude Basic Codex symlinks
+func (s *Service) removeCodexSymlinks(targetDir string, result *CleanupResult) error {
+	codexDir := filepath.Join(targetDir, config.CodexDir)
+	requiredSymlinks := config.GetCodexRequiredSymlinks()
+
+	for symlinkPath := range requiredSymlinks {
+		fullSymlinkPath := filepath.Join(codexDir, symlinkPath)
+
+		// Check if symlink exists
+		if info, err := os.Lstat(fullSymlinkPath); os.IsNotExist(err) {
+			continue // Skip if doesn't exist
+		} else if err != nil {
+			result.Warnings = append(result.Warnings, fmt.Sprintf("Could not check codex symlink %s: %v", fullSymlinkPath, err))
+			continue
+		} else if info.Mode()&os.ModeSymlink == 0 {
+			// Path exists but is not a symlink - preserve it
+			result.PreservedFiles = append(result.PreservedFiles, fullSymlinkPath)
+			result.Warnings = append(result.Warnings, fmt.Sprintf("Preserving non-symlink file: %s", fullSymlinkPath))
+			continue
+		}
+
+		// Validate it's a Strategic Claude symlink before removing
+		if isStrategicSymlink, err := s.isStrategicClaudeSymlink(fullSymlinkPath); err != nil {
+			result.Warnings = append(result.Warnings, fmt.Sprintf("Could not validate codex symlink %s: %v", fullSymlinkPath, err))
+			continue
+		} else if !isStrategicSymlink {
+			// Not our symlink - preserve it
+			result.PreservedFiles = append(result.PreservedFiles, fullSymlinkPath)
+			result.Warnings = append(result.Warnings, fmt.Sprintf("Preserving non-Strategic Claude codex symlink: %s", fullSymlinkPath))
+			continue
+		}
+
+		// Remove the Strategic Claude symlink
+		if err := os.Remove(fullSymlinkPath); err != nil {
+			if os.IsPermission(err) {
+				return models.NewFileSystemError(models.ErrorCodePermissionDenied, fullSymlinkPath, err)
+			}
+			return models.NewFileSystemError(models.ErrorCodeFileSystemError, fullSymlinkPath, err)
+		}
+
+		result.RemovedCodexSymlinks = append(result.RemovedCodexSymlinks, symlinkPath)
+	}
+
 	return nil
 }
 
@@ -186,28 +251,51 @@ func (s *Service) removeStrategicDirectory(targetDir string, result *CleanupResu
 	return nil
 }
 
-// cleanupEmptyDirectories removes empty .claude subdirectories if they contain no user content
-func (s *Service) cleanupEmptyDirectories(targetDir string, result *CleanupResult) error {
-	claudeDir := filepath.Join(targetDir, config.ClaudeDir)
-
-	// Check if .claude directory exists
-	if _, err := os.Stat(claudeDir); os.IsNotExist(err) {
-		return nil // Nothing to clean
+// cleanCodexConfig removes Codex configuration files
+func (s *Service) cleanCodexConfig(targetDir string, result *CleanupResult) error {
+	if err := s.codexConfigService.RemoveCodexConfig(targetDir); err != nil {
+		return fmt.Errorf("failed to remove codex config: %w", err)
 	}
+	result.CleanedCodexConfig = true
+	return nil
+}
 
-	// Check each subdirectory (agents, commands, hooks)
-	subdirs := []string{config.AgentsDir, config.CommandsDir, config.HooksDir}
-	for _, subdir := range subdirs {
-		subdirPath := filepath.Join(claudeDir, subdir)
+// cleanupEmptyDirectories removes empty .claude and .codex subdirectories if they contain no user content
+func (s *Service) cleanupEmptyDirectories(targetDir string, result *CleanupResult) error {
+	// Clean up .claude directory
+	claudeDir := filepath.Join(targetDir, config.ClaudeDir)
+	if _, err := os.Stat(claudeDir); err == nil {
+		// Check each subdirectory (agents, commands, hooks)
+		claudeSubdirs := []string{config.AgentsDir, config.CommandsDir, config.HooksDir}
+		for _, subdir := range claudeSubdirs {
+			subdirPath := filepath.Join(claudeDir, subdir)
+			if err := s.cleanupEmptySubdirectory(subdirPath, result); err != nil {
+				return err
+			}
+		}
 
-		if err := s.cleanupEmptySubdirectory(subdirPath, result); err != nil {
+		// Check if .claude directory itself is now empty
+		if err := s.cleanupEmptySubdirectory(claudeDir, result); err != nil {
 			return err
 		}
 	}
 
-	// Check if .claude directory itself is now empty
-	if err := s.cleanupEmptySubdirectory(claudeDir, result); err != nil {
-		return err
+	// Clean up .codex directory
+	codexDir := filepath.Join(targetDir, config.CodexDir)
+	if _, err := os.Stat(codexDir); err == nil {
+		// Check each subdirectory (prompts, hooks)
+		codexSubdirs := []string{config.PromptsDir, config.HooksDir}
+		for _, subdir := range codexSubdirs {
+			subdirPath := filepath.Join(codexDir, subdir)
+			if err := s.cleanupEmptySubdirectory(subdirPath, result); err != nil {
+				return err
+			}
+		}
+
+		// Check if .codex directory itself is now empty
+		if err := s.cleanupEmptySubdirectory(codexDir, result); err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -16,7 +16,7 @@ Strategic Claude Basic CLI automates the complex setup process of integrating St
 
 - **One-command installation** - Set up Strategic Claude Basic in any project instantly
 - **Smart updates** - Update framework core while preserving your custom content
-- **Automatic symlinks** - Creates proper `.claude` integration for Claude Code
+- **Automatic symlinks** - Creates proper `.claude` and `.codex` integration for AI tools
 - **Status validation** - Verify installation health and detect issues
 - **Clean removal** - Safely remove framework without affecting your work
 - **Shell completions** - Tab completion for bash, zsh, fish, and PowerShell
@@ -26,8 +26,8 @@ Strategic Claude Basic CLI automates the complex setup process of integrating St
 
 1. **Clones** Strategic Claude Basic template at a fixed, tested commit
 2. **Installs** `.strategic-claude-basic/` directory with framework content
-3. **Creates** `.claude/` directory structure for Claude Code integration
-4. **Links** Claude directories to framework components via symlinks
+3. **Creates** `.claude/` and `.codex/` directory structures for AI tool integration
+4. **Links** AI tool directories to framework components via symlinks
 5. **Preserves** your custom content during updates
 
 ## Installation
@@ -163,7 +163,13 @@ your-project/
 │   │   └── strategic -> ../../.strategic-claude-basic/core/commands
 │   ├── hooks/                       # Git hooks
 │   │   └── strategic -> ../../.strategic-claude-basic/core/hooks
-│   └── settings.local.json
+│   └── settings.json
+├── .codex/                          # Codex AI integration
+│   ├── prompts/                     # Codex prompts
+│   │   └── strategic -> ../../.strategic-claude-basic/core/commands
+│   ├── hooks/                       # Git hooks
+│   │   └── strategic -> ../../.strategic-claude-basic/core/hooks
+│   └── config.toml
 └── .strategic-claude-basic/         # Framework installation
     ├── archives/                    # Archived documentation (preserved)
     │   └── .gitkeep

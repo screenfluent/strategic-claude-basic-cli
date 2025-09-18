@@ -50,6 +50,34 @@ func (s *Service) CreateSymlinks(targetDir string) error {
 	return nil
 }
 
+// CreateCodexSymlinks creates all required symlinks from .codex subdirectories to strategic-claude-basic core
+func (s *Service) CreateCodexSymlinks(targetDir string) error {
+	if targetDir == "" {
+		return models.NewAppError(
+			models.ErrorCodeValidationFailed,
+			"Target directory cannot be empty",
+			nil,
+		)
+	}
+
+	codexDir := filepath.Join(targetDir, config.CodexDir)
+	requiredSymlinks := config.GetCodexRequiredSymlinks()
+
+	// Ensure .codex directory exists
+	if err := s.ensureCodexDirectoryStructure(codexDir); err != nil {
+		return fmt.Errorf("failed to ensure .codex directory structure: %w", err)
+	}
+
+	// Create each required symlink
+	for symlinkPath, target := range requiredSymlinks {
+		if err := s.createRelativeSymlink(codexDir, symlinkPath, target); err != nil {
+			return fmt.Errorf("failed to create codex symlink %s: %w", symlinkPath, err)
+		}
+	}
+
+	return nil
+}
+
 // RemoveSymlinks removes all Strategic Claude Basic symlinks from the .claude directory
 func (s *Service) RemoveSymlinks(targetDir string) error {
 	if targetDir == "" {
@@ -65,6 +93,39 @@ func (s *Service) RemoveSymlinks(targetDir string) error {
 
 	for symlinkPath := range requiredSymlinks {
 		fullSymlinkPath := filepath.Join(claudeDir, symlinkPath)
+
+		// Check if symlink exists
+		if _, err := os.Lstat(fullSymlinkPath); os.IsNotExist(err) {
+			continue // Skip if doesn't exist
+		}
+
+		// Remove the symlink
+		if err := os.Remove(fullSymlinkPath); err != nil {
+			if os.IsPermission(err) {
+				return models.NewFileSystemError(models.ErrorCodePermissionDenied, fullSymlinkPath, err)
+			}
+			return models.NewFileSystemError(models.ErrorCodeFileSystemError, fullSymlinkPath, err)
+		}
+	}
+
+	return nil
+}
+
+// RemoveCodexSymlinks removes all Strategic Claude Basic symlinks from the .codex directory
+func (s *Service) RemoveCodexSymlinks(targetDir string) error {
+	if targetDir == "" {
+		return models.NewAppError(
+			models.ErrorCodeValidationFailed,
+			"Target directory cannot be empty",
+			nil,
+		)
+	}
+
+	codexDir := filepath.Join(targetDir, config.CodexDir)
+	requiredSymlinks := config.GetCodexRequiredSymlinks()
+
+	for symlinkPath := range requiredSymlinks {
+		fullSymlinkPath := filepath.Join(codexDir, symlinkPath)
 
 		// Check if symlink exists
 		if _, err := os.Lstat(fullSymlinkPath); os.IsNotExist(err) {
@@ -122,6 +183,45 @@ func (s *Service) ValidateSymlinks(targetDir string) ([]models.SymlinkStatus, er
 	return statuses, nil
 }
 
+// ValidateCodexSymlinks checks all required Codex symlinks and returns their status
+func (s *Service) ValidateCodexSymlinks(targetDir string) ([]models.SymlinkStatus, error) {
+	if targetDir == "" {
+		return nil, models.NewAppError(
+			models.ErrorCodeValidationFailed,
+			"Target directory cannot be empty",
+			nil,
+		)
+	}
+
+	codexDir := filepath.Join(targetDir, config.CodexDir)
+	requiredSymlinks := config.GetCodexRequiredSymlinks()
+	var statuses []models.SymlinkStatus
+
+	for symlinkPath, expectedTarget := range requiredSymlinks {
+		fullSymlinkPath := filepath.Join(codexDir, symlinkPath)
+
+		status, err := s.fsValidator.ValidateSymlink(fullSymlinkPath, expectedTarget)
+		if err != nil {
+			// Create a basic status entry for the error
+			statuses = append(statuses, models.SymlinkStatus{
+				Name:   filepath.Base(symlinkPath),
+				Path:   fullSymlinkPath,
+				Valid:  false,
+				Target: "",
+				Exists: false,
+				Error:  fmt.Sprintf("Failed to validate codex symlink: %v", err),
+			})
+			continue
+		}
+
+		if status != nil {
+			statuses = append(statuses, *status)
+		}
+	}
+
+	return statuses, nil
+}
+
 // UpdateSymlinks updates existing symlinks to ensure they point to the correct targets
 func (s *Service) UpdateSymlinks(targetDir string) error {
 	if targetDir == "" {
@@ -140,6 +240,29 @@ func (s *Service) UpdateSymlinks(targetDir string) error {
 	// Create new symlinks
 	if err := s.CreateSymlinks(targetDir); err != nil {
 		return fmt.Errorf("failed to create updated symlinks: %w", err)
+	}
+
+	return nil
+}
+
+// UpdateCodexSymlinks updates existing Codex symlinks to ensure they point to the correct targets
+func (s *Service) UpdateCodexSymlinks(targetDir string) error {
+	if targetDir == "" {
+		return models.NewAppError(
+			models.ErrorCodeValidationFailed,
+			"Target directory cannot be empty",
+			nil,
+		)
+	}
+
+	// Remove existing symlinks
+	if err := s.RemoveCodexSymlinks(targetDir); err != nil {
+		return fmt.Errorf("failed to remove existing codex symlinks: %w", err)
+	}
+
+	// Create new symlinks
+	if err := s.CreateCodexSymlinks(targetDir); err != nil {
+		return fmt.Errorf("failed to create updated codex symlinks: %w", err)
 	}
 
 	return nil
@@ -221,6 +344,31 @@ func (s *Service) ensureClaudeDirectoryStructure(claudeDir string) error {
 	subdirs := []string{config.AgentsDir, config.CommandsDir, config.HooksDir}
 	for _, subdir := range subdirs {
 		subdirPath := filepath.Join(claudeDir, subdir)
+		if err := os.MkdirAll(subdirPath, config.DirPermissions); err != nil {
+			if os.IsPermission(err) {
+				return models.NewFileSystemError(models.ErrorCodePermissionDenied, subdirPath, err)
+			}
+			return models.NewFileSystemError(models.ErrorCodeFileSystemError, subdirPath, err)
+		}
+	}
+
+	return nil
+}
+
+// ensureCodexDirectoryStructure creates the .codex directory and its subdirectories if they don't exist
+func (s *Service) ensureCodexDirectoryStructure(codexDir string) error {
+	// Create main .codex directory
+	if err := os.MkdirAll(codexDir, config.DirPermissions); err != nil {
+		if os.IsPermission(err) {
+			return models.NewFileSystemError(models.ErrorCodePermissionDenied, codexDir, err)
+		}
+		return models.NewFileSystemError(models.ErrorCodeFileSystemError, codexDir, err)
+	}
+
+	// Create required subdirectories
+	subdirs := []string{config.PromptsDir, config.HooksDir}
+	for _, subdir := range subdirs {
+		subdirPath := filepath.Join(codexDir, subdir)
 		if err := os.MkdirAll(subdirPath, config.DirPermissions); err != nil {
 			if os.IsPermission(err) {
 				return models.NewFileSystemError(models.ErrorCodePermissionDenied, subdirPath, err)

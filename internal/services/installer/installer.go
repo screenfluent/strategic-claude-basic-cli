@@ -9,6 +9,7 @@ import (
 
 	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/config"
 	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/models"
+	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/codexconfig"
 	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/filesystem"
 	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/git"
 	"github.com/Fomo-Driven-Development/strategic-claude-basic-cli/internal/services/script"
@@ -25,6 +26,7 @@ type Service struct {
 	statusService     *status.Service
 	symlinkService    *symlink.Service
 	settingsService   *settings.Service
+	codexConfigService *codexconfig.Service
 	scriptService     *script.Service
 }
 
@@ -36,6 +38,7 @@ func New() *Service {
 		statusService:     status.NewService(),
 		symlinkService:    symlink.New(),
 		settingsService:   settings.New(),
+		codexConfigService: codexconfig.New(),
 		scriptService:     script.New(),
 	}
 }
@@ -179,9 +182,19 @@ func (s *Service) Install(installConfig models.InstallConfig) error {
 		return fmt.Errorf("failed to create symlinks: %w", err)
 	}
 
+	// Create Codex symlinks
+	if err := s.symlinkService.CreateCodexSymlinks(plan.TargetDir); err != nil {
+		return fmt.Errorf("failed to create codex symlinks: %w", err)
+	}
+
 	// Process settings.json (merge template with existing user settings)
 	if err := s.settingsService.ProcessSettings(plan.TargetDir); err != nil {
 		return fmt.Errorf("failed to process settings: %w", err)
+	}
+
+	// Process Codex config.toml (copy template if it exists)
+	if err := s.codexConfigService.ProcessCodexConfig(plan.TargetDir); err != nil {
+		return fmt.Errorf("failed to process codex config: %w", err)
 	}
 
 	// Execute post-install script if it exists
@@ -232,6 +245,11 @@ func (s *Service) InstallCore(sourceDir, targetDir string) error {
 	// Process settings.json (merge updated template with existing user settings)
 	if err := s.settingsService.ProcessSettings(targetDir); err != nil {
 		return fmt.Errorf("failed to process settings during core update: %w", err)
+	}
+
+	// Process Codex config.toml (update template if it exists)
+	if err := s.codexConfigService.ProcessCodexConfig(targetDir); err != nil {
+		return fmt.Errorf("failed to process codex config during core update: %w", err)
 	}
 
 	return nil

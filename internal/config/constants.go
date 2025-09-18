@@ -17,6 +17,7 @@ const (
 	TempDirPrefix           = "strategic-claude-base-"
 	StrategicClaudeBasicDir = ".strategic-claude-basic"
 	ClaudeDir               = ".claude"
+	CodexDir                = ".codex"
 	BackupDirPrefix         = "strategic-claude-basic-backup-"
 
 	// Framework directory structure within .strategic-claude-basic/
@@ -40,6 +41,7 @@ const (
 	AgentsDir   = "agents"
 	CommandsDir = "commands"
 	HooksDir    = "hooks"
+	PromptsDir  = "prompts"
 
 	// Symlink targets within .claude/
 	ClaudeCommandsDir = "commands"
@@ -49,6 +51,11 @@ const (
 	SettingsTemplateFile = "templates/hooks/dot_claude.settings.template.json"
 	ClaudeSettingsFile   = "settings.json"
 	SettingsBackupPrefix = "settings-backup-"
+
+	// Codex configuration files
+	CodexConfigTemplateFile = "templates/hooks/dot_codex.config.template.toml"
+	CodexConfigFile         = "config.toml"
+	CodexConfigBackupPrefix = "config-backup-"
 
 	// Directories that are replaced during updates
 	ReplacedDirs = "core/,guides/,templates/"
@@ -130,12 +137,20 @@ func GetUserPreservedDirectories() []string {
 	}
 }
 
-// GetRequiredSymlinks returns the symlinks that should be created
+// GetRequiredSymlinks returns the symlinks that should be created for .claude
 func GetRequiredSymlinks() map[string]string {
 	return map[string]string{
 		"agents/strategic":   "../../" + StrategicClaudeBasicDir + "/core/agents",
 		"commands/strategic": "../../" + StrategicClaudeBasicDir + "/core/commands",
 		"hooks/strategic":    "../../" + StrategicClaudeBasicDir + "/core/hooks",
+	}
+}
+
+// GetCodexRequiredSymlinks returns the symlinks that should be created for .codex
+func GetCodexRequiredSymlinks() map[string]string {
+	return map[string]string{
+		"prompts/strategic": "../../" + StrategicClaudeBasicDir + "/core/commands",
+		"hooks/strategic":   "../../" + StrategicClaudeBasicDir + "/core/hooks",
 	}
 }
 

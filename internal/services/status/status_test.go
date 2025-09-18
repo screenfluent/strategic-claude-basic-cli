@@ -179,6 +179,10 @@ func TestService_CheckInstallation_CompleteInstallation(t *testing.T) {
 			config.CommandsDir: nil,
 			config.HooksDir:    nil,
 		},
+		config.CodexDir: map[string]interface{}{
+			config.PromptsDir: nil,
+			config.HooksDir:   nil,
+		},
 	}
 
 	tempDir := createTestDirectory(t, structure)

@@ -21,6 +21,7 @@ type StatusInfo struct {
 	IsInstalled        bool `json:"is_installed"`
 	StrategicClaudeDir bool `json:"strategic_claude_dir_exists"`
 	ClaudeDir          bool `json:"claude_dir_exists"`
+	CodexDir           bool `json:"codex_dir_exists"`
 
 	// Template information
 	InstalledTemplate *templates.TemplateInfo `json:"installed_template,omitempty"`
@@ -30,8 +31,9 @@ type StatusInfo struct {
 	HasPostInstallScript bool `json:"has_post_install_script"`
 
 	// Detailed component status
-	Symlinks []SymlinkStatus `json:"symlinks"`
-	Issues   []string        `json:"issues"`
+	Symlinks      []SymlinkStatus `json:"symlinks"`
+	CodexSymlinks []SymlinkStatus `json:"codex_symlinks"`
+	Issues        []string        `json:"issues"`
 
 	// Installation metadata (deprecated - use InstalledTemplate instead)
 	InstallationDate *time.Time `json:"installation_date,omitempty"`
@@ -42,6 +44,7 @@ type StatusInfo struct {
 	TargetDir              string `json:"target_dir"`
 	StrategicClaudeDirPath string `json:"strategic_claude_dir_path"`
 	ClaudeDirPath          string `json:"claude_dir_path"`
+	CodexDirPath           string `json:"codex_dir_path"`
 }
 
 // SymlinkStatus represents the status of an individual symlink
@@ -94,11 +97,14 @@ func NewStatusInfo(targetDir string) *StatusInfo {
 		IsInstalled:            false,
 		StrategicClaudeDir:     false,
 		ClaudeDir:              false,
+		CodexDir:               false,
 		Symlinks:               make([]SymlinkStatus, 0),
+		CodexSymlinks:          make([]SymlinkStatus, 0),
 		Issues:                 make([]string, 0),
 		TargetDir:              targetDir,
 		StrategicClaudeDirPath: "",
 		ClaudeDirPath:          "",
+		CodexDirPath:           "",
 	}
 }
 
@@ -133,6 +139,11 @@ func (s *StatusInfo) AddSymlink(symlink SymlinkStatus) {
 	s.Symlinks = append(s.Symlinks, symlink)
 }
 
+// AddCodexSymlink adds a codex symlink status to the status info
+func (s *StatusInfo) AddCodexSymlink(symlink SymlinkStatus) {
+	s.CodexSymlinks = append(s.CodexSymlinks, symlink)
+}
+
 // HasIssues returns true if there are any issues
 func (s *StatusInfo) HasIssues() bool {
 	return len(s.Issues) > 0
@@ -142,6 +153,17 @@ func (s *StatusInfo) HasIssues() bool {
 func (s *StatusInfo) ValidSymlinks() int {
 	count := 0
 	for _, symlink := range s.Symlinks {
+		if symlink.Valid {
+			count++
+		}
+	}
+	return count
+}
+
+// ValidCodexSymlinks returns the number of valid Codex symlinks
+func (s *StatusInfo) ValidCodexSymlinks() int {
+	count := 0
+	for _, symlink := range s.CodexSymlinks {
 		if symlink.Valid {
 			count++
 		}
