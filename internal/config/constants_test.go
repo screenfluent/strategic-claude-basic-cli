@@ -72,7 +72,7 @@ func TestGetCoreDirectories(t *testing.T) {
 func TestGetUserPreservedDirectories(t *testing.T) {
 	dirs := GetUserPreservedDirectories()
 
-	expectedDirs := []string{ArchivesDir, IssuesDir, PlanDir, ProductDir, ResearchDir, SummaryDir, ToolsDir, ValidationDir}
+	expectedDirs := []string{ArchivesDir, DecisionsDir, IssuesDir, PlanDir, ProductDir, ResearchDir, SummaryDir, ToolsDir, ValidationDir}
 
 	if len(dirs) != len(expectedDirs) {
 		t.Errorf("Expected %d directories, got %d", len(expectedDirs), len(dirs))
@@ -373,8 +373,8 @@ func TestConstants_Values(t *testing.T) {
 	}
 
 	// Test specific value formats
-	if !strings.HasPrefix(DefaultRepoURL, "git@") {
-		t.Errorf("Expected DefaultRepoURL to be SSH, got %s", DefaultRepoURL)
+	if !strings.HasPrefix(DefaultRepoURL, "https://") {
+		t.Errorf("Expected DefaultRepoURL to be HTTPS, got %s", DefaultRepoURL)
 	}
 
 	if !strings.HasSuffix(DefaultRepoURL, ".git") {

@@ -99,8 +99,12 @@ func TestService_ProcessSettings(t *testing.T) {
 			}
 
 			// Create template file if provided
-			templatePath := filepath.Join(templatesDir, "settings.template.json")
+			templatePath := filepath.Join(strategicDir, config.SettingsTemplateFile)
 			if tt.templateSettings != nil {
+				// Ensure template directory exists
+				if err := os.MkdirAll(filepath.Dir(templatePath), 0755); err != nil {
+					t.Fatalf("Failed to create template directory: %v", err)
+				}
 				templateData, _ := json.MarshalIndent(tt.templateSettings, "", "  ")
 				if err := os.WriteFile(templatePath, templateData, 0644); err != nil {
 					t.Fatalf("Failed to write template file: %v", err)

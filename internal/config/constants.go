@@ -46,7 +46,7 @@ const (
 	ClaudeConfigFile  = "CLAUDE.md"
 
 	// Settings files
-	SettingsTemplateFile = "templates/hooks/settings.template.json"
+	SettingsTemplateFile = "templates/hooks/dot_claude.settings.template.json"
 	ClaudeSettingsFile   = "settings.json"
 	SettingsBackupPrefix = "settings-backup-"
 

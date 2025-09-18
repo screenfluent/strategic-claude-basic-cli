@@ -276,6 +276,7 @@ func TestAnalyzeFileOperations(t *testing.T) {
 			},
 			expectedPreserve: []string{
 				filepath.Join(config.StrategicClaudeBasicDir, config.ArchivesDir),
+				filepath.Join(config.StrategicClaudeBasicDir, config.DecisionsDir),
 				filepath.Join(config.StrategicClaudeBasicDir, config.IssuesDir),
 				filepath.Join(config.StrategicClaudeBasicDir, config.PlanDir),
 				filepath.Join(config.StrategicClaudeBasicDir, config.ProductDir),
