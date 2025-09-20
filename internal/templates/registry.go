@@ -21,7 +21,7 @@ var Registry = map[string]Template{
 		Description: "Main template for general development projects with comprehensive Claude Code integration",
 		RepoURL:     DefaultRepoURL,
 		Branch:      "main",
-		Commit:      "69f6e3434b6d3cc4b8482a2565d887214feaae09", // Latest commit - Add Codex researcher agent and templates
+		Commit:      "3e109c825f7e93cf8069bc32ef7e5be06ef22c97", // Latest commit - Add codex-review command for automated code review
 		Language:    "",                                         // Language-agnostic
 		Tags:        []string{"general", "default"},
 	},
@@ -31,7 +31,7 @@ var Registry = map[string]Template{
 		Description: "Specialized template for CCR (Claude Code Router) workflows and development patterns",
 		RepoURL:     DefaultRepoURL,
 		Branch:      "ccr-template",
-		Commit:      "4726382e813a559528664b18ebdd28681f68a037", // Latest commit - reorganize README: move Claude Code Router compatibility to top
+		Commit:      "2c9fa88312f7ae68747dd69bbc0075ab47b0225f", // Latest commit - Merge branch 'main' with codex-review features
 		Language:    "",
 		Tags:        []string{"ccr", "workflow", "specialized"},
 	},
