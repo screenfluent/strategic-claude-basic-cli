@@ -21,7 +21,7 @@ var Registry = map[string]Template{
 		Description: "Main template for general development projects with comprehensive Claude Code integration",
 		RepoURL:     DefaultRepoURL,
 		Branch:      "main",
-		Commit:      "9080f5291629718f1aa01824750479a263bc2360", // Latest commit - Update Claude Code commands for enhanced functionality
+		Commit:      "89453fb82df9e024d35510e2295e58a2e1c41856", // Latest commit - Enhance check_plan_for_blockers command with Codex integration and plan updates
 		Language:    "",                                         // Language-agnostic
 		Tags:        []string{"general", "default"},
 	},
