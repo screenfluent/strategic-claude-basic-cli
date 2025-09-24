@@ -8,7 +8,7 @@ import (
 const (
 	// Repository configuration (deprecated - use templates package instead)
 	// Kept for backward compatibility during migration
-	DefaultRepoURL = "https://github.com/Fomo-Driven-Development/strategic-claude-base.git"
+	DefaultRepoURL = "https://github.com/screenfluent/strategic-claude-base.git"
 	FixedCommit    = "4efe6386d0a949e3e2ddc1b0902ea937986da62f" // Pinned commit hash, updated with releases
 	Branch         = "main"
 
